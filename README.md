@@ -247,6 +247,10 @@ localhost. `scripts/assemble-dist.mjs` then stacks the seven `dist` folders into
 bun run build:netlify    # MFE_TARGET=netlify, build all seven, assemble dist/
 ```
 
+The site is connected to this repository, so pushing to `main` builds and publishes it. Netlify runs
+that same command in its own build image, against the `BUN_VERSION` and `NODE_VERSION` pinned in
+`netlify.toml`, and publishes the `dist/` it produces.
+
 Two things the single origin changes, both cosmetic:
 
 - The probe's "JavaScript by origin" table collapses to one row. Locally it is one row per port,
