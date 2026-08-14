@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   resolve: { dedupe: ['react', 'react-dom'] },
-  server: { port: 5000, strictPort: true },
-  preview: { port: 5000, strictPort: true },
+  // Deliberately not 5000: on macOS, AirPlay Receiver listens there.
+  server: { port: 5100, strictPort: true },
+  preview: { port: 5100, strictPort: true },
 });

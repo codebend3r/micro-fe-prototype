@@ -15,6 +15,7 @@
     "types": ["vite/client"]
   },
   "include": [
+    "scripts",
     "packages/*/*.js",
     "packages/*/*.jsx",
     "packages/*/*.d.ts",

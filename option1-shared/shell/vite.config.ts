@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
+import { quietLogger, silenceEmptyChunks } from '../../scripts/vite-quiet';
 
 // Timing-Allow-Origin lets the Shell read real transfer sizes for scripts that
 // came from the remotes' origins, which is what the probe panel reports.
@@ -40,7 +41,11 @@ export default defineConfig({
     // Makes the linked workspace packages resolve React from this app.
     dedupe: ['react', 'react-dom'],
   },
-  build: { target: 'chrome89' },
+  customLogger: quietLogger(),
+  build: {
+    target: 'chrome89',
+    rollupOptions: { onwarn: silenceEmptyChunks },
+  },
   server: { port: 5010, strictPort: true, cors: true, headers },
   preview: { port: 5010, strictPort: true, cors: true, headers },
 });

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
+import { quietLogger, silenceEmptyChunks } from '../../scripts/vite-quiet';
 
 const headers = { 'Timing-Allow-Origin': '*' };
 
@@ -25,7 +26,11 @@ export default defineConfig({
     }),
   ],
   resolve: { dedupe: ['react', 'react-dom'] },
-  build: { target: 'chrome89' },
+  customLogger: quietLogger(),
+  build: {
+    target: 'chrome89',
+    rollupOptions: { onwarn: silenceEmptyChunks },
+  },
   server: { port: 5012, strictPort: true, cors: true, headers, origin: 'http://localhost:5012' },
   preview: { port: 5012, strictPort: true, cors: true, headers },
 });
