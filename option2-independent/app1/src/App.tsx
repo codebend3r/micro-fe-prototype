@@ -1,6 +1,6 @@
 /**
- * app1's inventory screen. Same product surface as Option 1's app1, reached
- * through a completely different seam.
+ * app1's catalog screen. This is the app that WRITES. Same product surface as
+ * Option 1's app1, reached through a completely different seam.
  *
  * There is no `useSession()` here that works. app1 has its own copy of
  * @mfe/session and its own React, so the Shell's provider is invisible. The
@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 import { useSession, useStoreState } from '@mfe/session';
 import {
   CATALOG,
-  formatMoney,
   updateApp,
   type AppRecord,
   type Bus,
@@ -49,7 +48,8 @@ export default function App({
     throw new Error('app1 threw during render, on purpose');
   }
 
-  const qtyFor = (sku: string) => state.order.find((line) => line.sku === sku)?.qty ?? 0;
+  const countFor = (sku: string) =>
+    state.selection.find((item) => item.sku === sku)?.count ?? 0;
 
   return (
     <RemoteBoundary
@@ -70,48 +70,49 @@ export default function App({
         <span className="pill">theme seen: {state.theme}</span>
       </div>
 
-      <div className="parts">
-        {CATALOG.map((part) => (
-          <article className="part" key={part.sku}>
-            <span className="part-sku">{part.sku}</span>
-            <span className="part-name">{part.name}</span>
-            <span className="part-meta">
-              <span>
-                {part.category}, {part.stock} in stock
-              </span>
-              <span className="part-price">{formatMoney(part.price)}</span>
-            </span>
-            <span className="part-meta">
-              <span className="small muted">
-                {qtyFor(part.sku) ? `${qtyFor(part.sku)} on this order` : 'not ordered'}
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={() => store.addToOrder(part.sku)}
-              >
-                Add
-              </button>
-            </span>
-          </article>
-        ))}
-      </div>
-
       <div className="note">
-        <strong>How the Add button reaches the Shell</strong>
+        <strong>The buttons below write to state the Shell owns</strong>
         <span>
-          It calls a method on the plain store object the Shell passed in at mount time. The Shell
-          re renders in its React 19 tree, app1 re renders in its React 18 tree, and the two commits
-          are unrelated. Last event on the shared bus:{' '}
+          Same result as Option 1, different plumbing. There is no context to reach for, so each
+          button calls a method on the plain store object the Shell passed in at mount time. The
+          Shell re renders in its React 19 tree, app1 re renders in its React 18 tree, and the two
+          commits are unrelated. Last event on the shared bus:{' '}
           <span className="mono">{lastEvent ? lastEvent.type : 'none yet'}</span>.
         </span>
       </div>
 
-      <div className="row">
+      <ul className="rows">
+        {CATALOG.map((part) => (
+          <li className="rowitem" key={part.sku}>
+            <span className="rowitem-main">
+              <span className="rowitem-name">{part.name}</span>
+              <span className="rowitem-meta">
+                {part.sku} / {part.category}
+              </span>
+            </span>
+            <span className="rowitem-state">
+              {countFor(part.sku) ? `in shared state x${countFor(part.sku)}` : ''}
+            </span>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => store.addToSelection(part.sku)}
+            >
+              Add to shared state
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="note">
+        <strong>This button crashes app1 on purpose</strong>
+        <span>
+          It throws during render. app1 owns its own React 18 root, so app1's own error boundary
+          catches it. The Shell and app2 never find out.
+        </span>
         <button type="button" className="btn btn-sm btn-danger" onClick={() => setBoom(true)}>
-          Throw a render error
+          Crash app1
         </button>
-        <span className="small muted">app1's own boundary catches it, not the Shell's</span>
       </div>
     </RemoteBoundary>
   );

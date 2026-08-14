@@ -9,8 +9,8 @@ import { SessionProvider } from '@mfe/session';
 import App from './App';
 
 const standaloneStore = createSessionStore();
-standaloneStore.addToOrder('BR-2210');
-standaloneStore.addToOrder('CP-0031');
+standaloneStore.addToSelection('BR-2210');
+standaloneStore.addToSelection('CP-0031');
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <SessionProvider store={standaloneStore}>

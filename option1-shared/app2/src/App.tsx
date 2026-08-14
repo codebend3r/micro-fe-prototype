@@ -1,5 +1,5 @@
 /**
- * app2, exposed to the Shell as './App'.
+ * app2, exposed to the Shell as './App'. This is the app that READS.
  *
  * Nothing here knows that app1 exists. It reads the same session context the
  * Shell provides, so anything app1 writes shows up here on the next render,
@@ -8,12 +8,12 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { SESSION_MODULE_TOKEN, useSession } from '@mfe/session';
-import { findPart, formatMoney, registerApp, updateApp } from '@mfe/shared-core';
+import { findPart, registerApp, updateApp } from '@mfe/shared-core';
 import { RemoteBoundary } from '@mfe/ui/chrome';
 
 const identity = registerApp({
   app: 'app2',
-  label: 'remote: orders',
+  label: 'remote: reads the shared state',
   role: 'remote',
   react: React,
   sessionToken: SESSION_MODULE_TOKEN,
@@ -35,11 +35,8 @@ export default function App() {
     throw new Error('app2 threw during render, on purpose');
   }
 
-  const order = session?.state.order ?? [];
-  const total = order.reduce(
-    (sum, line) => sum + (findPart(line.sku)?.price ?? 0) * line.qty,
-    0,
-  );
+  const selection = session?.state.selection ?? [];
+  const total = selection.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <RemoteBoundary
@@ -63,67 +60,64 @@ export default function App() {
         <span className="pill">theme seen: {session?.state.theme ?? 'unknown'}</span>
       </div>
 
-      {order.length === 0 ? (
+      <div className="note">
+        <strong>This list is written by app1, not by app2</strong>
+        <span>
+          The two remotes never import or call each other. They both read the one piece of state the
+          Shell owns, so whatever you add on the Catalog tab appears here.
+        </span>
+      </div>
+
+      {selection.length === 0 ? (
         <div className="empty">
-          <strong>No lines yet</strong>
-          <span className="small">Add a few parts in Inventory, then come back.</span>
+          <strong>Nothing in the shared state yet</strong>
+          <span className="small">
+            Open the Catalog tab, click Add to shared state, then come back.
+          </span>
         </div>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Part</th>
-              <th className="num">Qty</th>
-              <th className="num">Line total</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {order.map((line) => {
-              const part = findPart(line.sku);
-              return (
-                <tr key={line.sku}>
-                  <td>
-                    <strong>{part?.name}</strong>
-                    <br />
-                    <span className="small muted mono">{line.sku}</span>
-                  </td>
-                  <td className="num mono">{line.qty}</td>
-                  <td className="num mono">{formatMoney((part?.price ?? 0) * line.qty)}</td>
-                  <td className="num">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      onClick={() => session?.store.removeFromOrder(line.sku)}
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <ul className="rows">
+          {selection.map((item) => (
+            <li className="rowitem" key={item.sku}>
+              <span className="rowitem-main">
+                <span className="rowitem-name">{findPart(item.sku)?.name}</span>
+                <span className="rowitem-meta">{item.sku}</span>
+              </span>
+              <span className="rowitem-state">added x{item.count}</span>
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => session?.store.removeFromSelection(item.sku)}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="totals">
         <span className="muted">
-          {order.length} line{order.length === 1 ? '' : 's'} for {session?.state.user.name ?? 'nobody'}
+          {total} item{total === 1 ? '' : 's'} in the shared state
         </span>
-        <span className="totals-value">{formatMoney(total)}</span>
-      </div>
-
-      <div className="row">
         <button
           type="button"
           className="btn btn-sm"
-          onClick={() => session?.store.clearOrder()}
-          disabled={!session || order.length === 0}
+          onClick={() => session?.store.clearSelection()}
+          disabled={!session || selection.length === 0}
         >
-          Clear order
+          Clear it
         </button>
+      </div>
+
+      <div className="note">
+        <strong>This button crashes app2 on purpose</strong>
+        <span>
+          It throws during render. Option 1 runs a single React reconciler, so the Shell's error
+          boundary catches it and the rest of the Shell keeps working.
+        </span>
         <button type="button" className="btn btn-sm btn-danger" onClick={() => setBoom(true)}>
-          Throw a render error
+          Crash app2
         </button>
       </div>
     </RemoteBoundary>

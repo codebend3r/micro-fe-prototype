@@ -374,6 +374,12 @@ pre,
 
 .note strong { color: var(--text); }
 
+/* Explainer notes carry the demo buttons, so the button must not stretch. */
+.note .btn,
+.note .row {
+  justify-self: start;
+}
+
 pre.code {
   padding: 12px 14px;
   border-radius: var(--radius-sm);
@@ -568,42 +574,53 @@ pre.code b {
 
 /* ------------------------------------------------------------ domain --- */
 
-.parts {
+/* One row per item, so the action button has room for a label that says what
+   it actually does rather than a one word verb. */
+.rows {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-  gap: 10px;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
 }
 
-.part {
+.rowitem {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 6px;
-  padding: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-inset);
 }
 
-.part-sku {
+.rowitem-main {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rowitem-name { font-weight: 600; }
+
+.rowitem-meta {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-faint);
 }
 
-.part-name { font-weight: 600; }
-
-.part-meta {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 8px;
+.rowitem-state {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--accent);
+  font-family: var(--mono);
+  white-space: nowrap;
 }
 
-.part-price {
-  font-family: var(--mono);
-  color: var(--text);
+@media (max-width: 620px) {
+  .rowitem {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rowitem-state { display: none; }
 }
 
 .empty {
@@ -630,7 +647,7 @@ pre.code b {
 
 .totals-value {
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--accent);
 }

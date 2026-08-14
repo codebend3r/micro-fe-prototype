@@ -87,8 +87,8 @@ export function useCompareBridge(store) {
       if (!data || data.source !== 'mfe-compare') return;
       if (data.kind === 'navigate') store.navigate(data.path);
       if (data.kind === 'theme') store.setTheme(data.theme);
-      if (data.kind === 'order:add') store.addToOrder(data.sku);
-      if (data.kind === 'order:clear') store.clearOrder();
+      if (data.kind === 'selection:add') store.addToSelection(data.sku);
+      if (data.kind === 'selection:clear') store.clearSelection();
       if (data.kind === 'reload') window.location.reload();
     };
 
@@ -117,7 +117,7 @@ export function useTelemetryUplink(option, snapshot, scripts, state) {
           scripts,
           route: state.route,
           theme: state.theme,
-          orderLines: state.order.length,
+          selectedItems: state.selection.length,
         },
       },
       '*',

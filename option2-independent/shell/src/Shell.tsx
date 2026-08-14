@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { SessionProvider, useSession } from '@mfe/session';
-import { bus, findPart, formatMoney } from '@mfe/shared-core';
+import { bus } from '@mfe/shared-core';
 import { ProbePanel } from '@mfe/ui/probe-panel';
 import { ErrorBoundary } from '@mfe/ui/chrome';
 import {
@@ -29,8 +29,8 @@ const mountProps = { store, bus, host: 'shell' };
 
 const NAV = [
   { path: '/overview', label: 'Overview' },
-  { path: '/inventory', label: 'Inventory' },
-  { path: '/orders', label: 'Orders' },
+  { path: '/catalog', label: 'Catalog (app1)' },
+  { path: '/selection', label: 'Selection (app2)' },
 ];
 
 export function Shell() {
@@ -57,10 +57,7 @@ function ShellChrome() {
   const events = useBusEvents();
   useTelemetryUplink(2, snapshot, scripts, state);
 
-  const orderTotal = state.order.reduce(
-    (sum, line) => sum + (findPart(line.sku)?.price ?? 0) * line.qty,
-    0,
-  );
+  const selected = state.selection.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <div className="shell">
@@ -88,9 +85,8 @@ function ShellChrome() {
         </nav>
 
         <div className="header-side">
-          <span className="chip">
-            order <strong>{state.order.length}</strong> lines
-            <strong>{formatMoney(orderTotal)}</strong>
+          <span className="chip" title="State the Shell owns, written by app1 and read by app2">
+            shared state <strong>{selected}</strong> item{selected === 1 ? '' : 's'}
           </span>
           <button
             type="button"
@@ -106,14 +102,26 @@ function ShellChrome() {
         <main className="stack">
           {state.route === '/overview' ? <Overview /> : null}
 
-          {state.route === '/inventory' ? (
-            <RemoteSlot title="Inventory" remote="app1" port={5021} react="18">
+          {state.route === '/catalog' ? (
+            <RemoteSlot
+              title="Catalog"
+              role="writes the shared state"
+              remote="app1"
+              port={5021}
+              react="18"
+            >
               <RemoteMount name="app1" loader={loadApp1} props={mountProps} />
             </RemoteSlot>
           ) : null}
 
-          {state.route === '/orders' ? (
-            <RemoteSlot title="Orders" remote="app2" port={5022} react="19">
+          {state.route === '/selection' ? (
+            <RemoteSlot
+              title="Selection"
+              role="reads the shared state"
+              remote="app2"
+              port={5022}
+              react="19"
+            >
               <RemoteMount name="app2" loader={loadApp2} props={mountProps} />
             </RemoteSlot>
           ) : null}
@@ -133,12 +141,14 @@ function ShellChrome() {
 
 function RemoteSlot({
   title,
+  role,
   remote,
   port,
   react,
   children,
 }: {
   title: string;
+  role: string;
   remote: string;
   port: number;
   react: string;
@@ -148,7 +158,7 @@ function RemoteSlot({
     <section className="panel">
       <div className="panel-head">
         <div className="panel-title">
-          <span className="eyebrow">remote</span>
+          <span className="eyebrow">remote {remote}, {role}</span>
           <h1>{title}</h1>
         </div>
         <span className="pill pill-accent">

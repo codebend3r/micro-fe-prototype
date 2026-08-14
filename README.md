@@ -4,9 +4,13 @@ Two micro frontend integration strategies, built for real and running at the sam
 can be compared side by side.
 
 Both systems are the same product: a Shell (host) that owns routing, layout and session, plus two
-remotes, `app1` (inventory) and `app2` (orders), each independently built and deployed and loaded
-at runtime from its own `remoteEntry.js`. Both use Vite with `@module-federation/vite`
-(Module Federation 2.0). No webpack anywhere.
+remotes: `app1` (Catalog, which writes shared state) and `app2` (Selection, which reads it). Each
+remote is independently built and deployed, and loaded at runtime from its own `remoteEntry.js`.
+Both use Vite with `@module-federation/vite` (Module Federation 2.0). No webpack anywhere.
+
+The demo content is placeholder data. Nothing is priced, sold, or sent anywhere. The `selection`
+list exists only to be a value that visibly crosses an app boundary, so the two options can be
+caught doing it differently.
 
 The only thing that differs is one decision.
 
@@ -59,8 +63,8 @@ pnpm start:option1
 Open **http://localhost:5010**.
 
 Three servers come up: the Shell on 5010, `app1` on 5011, `app2` on 5012. The Shell fetches
-`http://localhost:5011/remoteEntry.js` the first time you click Inventory, and 5012 the first time
-you click Orders.
+`http://localhost:5011/remoteEntry.js` the first time you click Catalog, and 5012 the first time
+you click Selection.
 
 If you would rather see the three processes separately, this is the same thing in three terminals:
 
@@ -157,11 +161,11 @@ touch anything else listening nearby.
 | --- | --- |
 | 5100 | Comparison harness |
 | 5010 | Option 1 Shell |
-| 5011 | Option 1 `app1`, inventory, React 19 |
-| 5012 | Option 1 `app2`, orders, React 19 |
+| 5011 | Option 1 `app1`, Catalog, React 19 |
+| 5012 | Option 1 `app2`, Selection, React 19 |
 | 5020 | Option 2 Shell |
-| 5021 | Option 2 `app1`, inventory, **React 18** |
-| 5022 | Option 2 `app2`, orders, React 19 |
+| 5021 | Option 2 `app1`, Catalog, **React 18** |
+| 5022 | Option 2 `app2`, Selection, React 19 |
 
 Every port is pinned with `strictPort: true`, on purpose. The Shells resolve their remotes by
 absolute URL, so a remote silently landing on a different port would be worse than a failure. The
@@ -181,9 +185,10 @@ harness deliberately avoids port 5000, which macOS AirPlay Receiver occupies by 
    report `mount props`, and each one visibly prints `useSession() returned null`. The Option 2
    Shell renders exactly the same `<SessionProvider>` as Option 1. The remotes just cannot see it.
 5. **JavaScript transferred.** Option 2 ships React three times and the number says so.
-6. **Add a part in Inventory, then open Orders.** Cross app updates work in both, through different
-   machinery: shared React context in Option 1, a plain store object passed at mount in Option 2.
-7. **Click "Throw a render error"** inside a remote. In Option 1 the Shell's error boundary catches
+6. **Click "Add to shared state" on the Catalog tab, then open Selection.** Cross app updates work
+   in both, through different machinery: shared React context in Option 1, a plain store object
+   handed over at mount time in Option 2.
+7. **Click "Crash app1" or "Crash app2"** inside a remote. In Option 1 the Shell's error boundary catches
    it, because there is one reconciler. In Option 2 the remote's own boundary catches it and the
    Shell never finds out, which is the fault isolation Option 2 is bought for.
 8. **Switch the theme.** It works in both, because CSS custom properties cascade through the DOM

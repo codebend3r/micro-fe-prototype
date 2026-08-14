@@ -26,8 +26,8 @@ root.innerHTML = `
 `;
 
 const standaloneStore = createSessionStore();
-standaloneStore.addToOrder('BR-2210');
-standaloneStore.addToOrder('CP-0031');
+standaloneStore.addToSelection('BR-2210');
+standaloneStore.addToSelection('CP-0031');
 
 mount(document.getElementById('mount-point') as HTMLElement, {
   store: standaloneStore,

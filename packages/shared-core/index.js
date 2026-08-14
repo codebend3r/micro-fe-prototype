@@ -37,13 +37,19 @@ export function createStore(initialState) {
   };
 }
 
-/** The one piece of application state the Shell owns and both remotes touch. */
+/**
+ * The one piece of application state the Shell owns and both remotes touch.
+ *
+ * `selection` is deliberately boring: a list of items app1 adds and app2 reads.
+ * Its only job is to be a value that visibly crosses an app boundary, so the
+ * two options can be caught doing it differently.
+ */
 export function createSessionStore() {
   const store = createStore({
     user: { name: 'Dana Okafor', role: 'Operations lead' },
     theme: 'dark',
     route: '/overview',
-    order: [],
+    selection: [],
   });
 
   return {
@@ -59,27 +65,27 @@ export function createSessionStore() {
       bus.emit('session:route', { route });
     },
 
-    addToOrder(sku) {
-      const { order } = store.getState();
-      const existing = order.find((line) => line.sku === sku);
+    addToSelection(sku) {
+      const { selection } = store.getState();
+      const existing = selection.find((item) => item.sku === sku);
       const next = existing
-        ? order.map((line) =>
-            line.sku === sku ? { ...line, qty: line.qty + 1 } : line,
+        ? selection.map((item) =>
+            item.sku === sku ? { ...item, count: item.count + 1 } : item,
           )
-        : [...order, { sku, qty: 1 }];
-      store.setState({ order: next });
-      bus.emit('order:changed', { sku, order: next });
+        : [...selection, { sku, count: 1 }];
+      store.setState({ selection: next });
+      bus.emit('selection:changed', { sku, selection: next });
     },
 
-    removeFromOrder(sku) {
-      const next = store.getState().order.filter((line) => line.sku !== sku);
-      store.setState({ order: next });
-      bus.emit('order:changed', { sku, order: next });
+    removeFromSelection(sku) {
+      const next = store.getState().selection.filter((item) => item.sku !== sku);
+      store.setState({ selection: next });
+      bus.emit('selection:changed', { sku, selection: next });
     },
 
-    clearOrder() {
-      store.setState({ order: [] });
-      bus.emit('order:changed', { sku: null, order: [] });
+    clearSelection() {
+      store.setState({ selection: [] });
+      bus.emit('selection:changed', { sku: null, selection: [] });
     },
   };
 }
@@ -263,24 +269,18 @@ export function measureScripts() {
 
 /* ------------------------------------------------------------ catalog --- */
 
+/** Placeholder rows. Nothing here is priced, sold, or sent anywhere. */
 export const CATALOG = [
-  { sku: 'AX-1042', name: 'Axial fan module', category: 'Cooling', price: 12400, stock: 38 },
-  { sku: 'BR-2210', name: 'Brushless servo', category: 'Motion', price: 48900, stock: 12 },
-  { sku: 'CP-0031', name: 'Capacitor bank', category: 'Power', price: 7350, stock: 96 },
-  { sku: 'DR-7788', name: 'Driver board rev C', category: 'Control', price: 22150, stock: 5 },
-  { sku: 'EN-3390', name: 'Optical encoder', category: 'Motion', price: 15600, stock: 41 },
-  { sku: 'FL-0912', name: 'Inline filter', category: 'Fluid', price: 4200, stock: 154 },
+  { sku: 'AX-1042', name: 'Axial fan module', category: 'Cooling' },
+  { sku: 'BR-2210', name: 'Brushless servo', category: 'Motion' },
+  { sku: 'CP-0031', name: 'Capacitor bank', category: 'Power' },
+  { sku: 'DR-7788', name: 'Driver board rev C', category: 'Control' },
+  { sku: 'EN-3390', name: 'Optical encoder', category: 'Motion' },
+  { sku: 'FL-0912', name: 'Inline filter', category: 'Fluid' },
 ];
 
 export function findPart(sku) {
   return CATALOG.find((part) => part.sku === sku);
-}
-
-export function formatMoney(cents) {
-  return `$${(cents / 100).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 export function formatBytes(bytes) {

@@ -16,11 +16,11 @@ const SHELL_CONFIG = `federation({
 })`;
 
 const SHELL_USAGE = `// The remote is just a component.
-const InventoryApp = lazy(() => import('app1/App'));
+const CatalogApp = lazy(() => import('app1/App'));
 
 <ErrorBoundary owner="Shell">
   <Suspense fallback={<Spinner />}>
-    <InventoryApp />
+    <CatalogApp />
   </Suspense>
 </ErrorBoundary>`;
 
@@ -28,7 +28,7 @@ const REMOTE_USAGE = `// app1/src/App.tsx, exposed as './App'
 export default function App() {
   // Reaches the Shell's provider. No props, no wiring.
   const { state, store } = useSession();
-  return <Inventory order={state.order} onAdd={store.addToOrder} />;
+  return <Catalog items={state.selection} onAdd={store.addToSelection} />;
 }`;
 
 export function Overview() {
@@ -70,8 +70,8 @@ export function Overview() {
           <dd>{state.theme}</dd>
           <dt>Route</dt>
           <dd>{state.route}</dd>
-          <dt>Order lines</dt>
-          <dd>{state.order.length}</dd>
+          <dt>Shared items</dt>
+          <dd>{state.selection.length}</dd>
         </dl>
       </section>
 

@@ -1,5 +1,6 @@
 /**
- * app2's orders screen, on React 19, reading the same store app1 writes to.
+ * app2's selection screen, on React 19, reading the same store app1 writes to.
+ * This is the app that READS.
  *
  * The two remotes never import each other and never share a React tree. They
  * agree on one plain JavaScript object and one event bus, which is the entire
@@ -9,7 +10,6 @@ import { useEffect, useState } from 'react';
 import { useSession, useStoreState } from '@mfe/session';
 import {
   findPart,
-  formatMoney,
   updateApp,
   type AppRecord,
   type Bus,
@@ -48,11 +48,8 @@ export default function App({
     throw new Error('app2 threw during render, on purpose');
   }
 
-  const { order } = state;
-  const total = order.reduce(
-    (sum, line) => sum + (findPart(line.sku)?.price ?? 0) * line.qty,
-    0,
-  );
+  const { selection } = state;
+  const total = selection.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <RemoteBoundary
@@ -75,67 +72,65 @@ export default function App({
         </span>
       </div>
 
-      {order.length === 0 ? (
+      <div className="note">
+        <strong>This list is written by app1, not by app2</strong>
+        <span>
+          app1 is a React 18 tree and app2 is a React 19 tree. They cannot share components, hooks or
+          context, so they share one plain object instead: the store the Shell handed to both of them
+          at mount time.
+        </span>
+      </div>
+
+      {selection.length === 0 ? (
         <div className="empty">
-          <strong>No lines yet</strong>
-          <span className="small">Add a few parts in Inventory, then come back.</span>
+          <strong>Nothing in the shared state yet</strong>
+          <span className="small">
+            Open the Catalog tab, click Add to shared state, then come back.
+          </span>
         </div>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Part</th>
-              <th className="num">Qty</th>
-              <th className="num">Line total</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {order.map((line) => {
-              const part = findPart(line.sku);
-              return (
-                <tr key={line.sku}>
-                  <td>
-                    <strong>{part?.name}</strong>
-                    <br />
-                    <span className="small muted mono">{line.sku}</span>
-                  </td>
-                  <td className="num mono">{line.qty}</td>
-                  <td className="num mono">{formatMoney((part?.price ?? 0) * line.qty)}</td>
-                  <td className="num">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      onClick={() => store.removeFromOrder(line.sku)}
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <ul className="rows">
+          {selection.map((item) => (
+            <li className="rowitem" key={item.sku}>
+              <span className="rowitem-main">
+                <span className="rowitem-name">{findPart(item.sku)?.name}</span>
+                <span className="rowitem-meta">{item.sku}</span>
+              </span>
+              <span className="rowitem-state">added x{item.count}</span>
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => store.removeFromSelection(item.sku)}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="totals">
         <span className="muted">
-          {order.length} line{order.length === 1 ? '' : 's'} for {state.user.name}
+          {total} item{total === 1 ? '' : 's'} in the shared state
         </span>
-        <span className="totals-value">{formatMoney(total)}</span>
-      </div>
-
-      <div className="row">
         <button
           type="button"
           className="btn btn-sm"
-          onClick={() => store.clearOrder()}
-          disabled={order.length === 0}
+          onClick={() => store.clearSelection()}
+          disabled={selection.length === 0}
         >
-          Clear order
+          Clear it
         </button>
+      </div>
+
+      <div className="note">
+        <strong>This button crashes app2 on purpose</strong>
+        <span>
+          It throws during render. app2 owns its own React 19 root, so app2's own error boundary
+          catches it. The Shell and app1 never find out.
+        </span>
         <button type="button" className="btn btn-sm btn-danger" onClick={() => setBoom(true)}>
-          Throw a render error
+          Crash app2
         </button>
       </div>
     </RemoteBoundary>

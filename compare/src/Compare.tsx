@@ -25,7 +25,7 @@ type Telemetry = {
   scripts: { chunks: number; bytes: number };
   route: string;
   theme: string;
-  orderLines: number;
+  selectedItems: number;
 };
 
 const SHELLS = [
@@ -45,8 +45,8 @@ const SHELLS = [
 
 const ROUTES = [
   { path: '/overview', label: 'Overview' },
-  { path: '/inventory', label: 'Inventory' },
-  { path: '/orders', label: 'Orders' },
+  { path: '/catalog', label: 'Catalog' },
+  { path: '/selection', label: 'Selection' },
 ];
 
 const STATIC_ROWS: [string, string, string][] = [
@@ -116,8 +116,8 @@ export function Compare() {
   };
 
   const warmUp = () => {
-    go('/inventory');
-    window.setTimeout(() => go('/orders'), 1400);
+    go('/catalog');
+    window.setTimeout(() => go('/selection'), 1400);
   };
 
   const one = telemetry[1];
@@ -184,14 +184,14 @@ export function Compare() {
               <button
                 type="button"
                 className="btn btn-sm"
-                onClick={() => send({ kind: 'order:add', sku: 'DR-7788' })}
+                onClick={() => send({ kind: 'selection:add', sku: 'DR-7788' })}
               >
-                Add a part
+                Write shared state
               </button>
               <button
                 type="button"
                 className="btn btn-sm"
-                onClick={() => send({ kind: 'order:clear' })}
+                onClick={() => send({ kind: 'selection:clear' })}
               >
                 Clear
               </button>
@@ -268,9 +268,9 @@ export function Compare() {
               two={two && String(two.scripts.chunks)}
             />
             <Row
-              label="Order lines in the shared session"
-              one={one && String(one.orderLines)}
-              two={two && String(two.orderLines)}
+              label="Items in the shared session"
+              one={one && String(one.selectedItems)}
+              two={two && String(two.selectedItems)}
             />
           </tbody>
         </table>

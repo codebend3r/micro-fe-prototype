@@ -2,20 +2,18 @@ export interface Part {
   sku: string;
   name: string;
   category: string;
-  price: number;
-  stock: number;
 }
 
-export interface OrderLine {
+export interface SelectionItem {
   sku: string;
-  qty: number;
+  count: number;
 }
 
 export interface SessionState {
   user: { name: string; role: string };
   theme: 'dark' | 'light';
   route: string;
-  order: OrderLine[];
+  selection: SelectionItem[];
 }
 
 export interface Store<T> {
@@ -27,9 +25,9 @@ export interface Store<T> {
 export interface SessionStore extends Store<SessionState> {
   setTheme(theme: 'dark' | 'light'): void;
   navigate(route: string): void;
-  addToOrder(sku: string): void;
-  removeFromOrder(sku: string): void;
-  clearOrder(): void;
+  addToSelection(sku: string): void;
+  removeFromSelection(sku: string): void;
+  clearSelection(): void;
 }
 
 export interface BusEvent {
@@ -99,5 +97,4 @@ export function measureScripts(): ScriptMeasurement;
 
 export const CATALOG: Part[];
 export function findPart(sku: string): Part | undefined;
-export function formatMoney(cents: number): string;
 export function formatBytes(bytes: number): string;

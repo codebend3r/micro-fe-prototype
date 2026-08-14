@@ -72,8 +72,8 @@ export function Overview() {
           <dd>{state.theme}</dd>
           <dt>Route</dt>
           <dd>{state.route}</dd>
-          <dt>Order lines</dt>
-          <dd>{state.order.length}</dd>
+          <dt>Shared items</dt>
+          <dd>{state.selection.length}</dd>
         </dl>
       </section>
 
