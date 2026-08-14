@@ -1,16 +1,16 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * Preflight and cleanup for the prototype's fixed ports.
  *
  * Every app pins its port with `strictPort: true`, because the Shells resolve
  * their remotes by absolute URL. That is the right behaviour, but it means a
- * single stale process turns `pnpm start` into seven confusing SIGTERM
+ * single stale process turns `bun run start` into seven confusing SIGTERM
  * failures at once. This script turns that into one clear sentence.
  *
- *   node scripts/ports.mjs check all          verify the ports are free
- *   node scripts/ports.mjs check option1      verify one stack's ports
- *   node scripts/ports.mjs check option1 --built   also verify dist/ exists
- *   node scripts/ports.mjs free all           kill this repo's dev servers
+ *   bun scripts/ports.mjs check all          verify the ports are free
+ *   bun scripts/ports.mjs check option1      verify one stack's ports
+ *   bun scripts/ports.mjs check option1 --built   also verify dist/ exists
+ *   bun scripts/ports.mjs free all           kill this repo's dev servers
  */
 import net from 'node:net';
 import path from 'node:path';
@@ -19,6 +19,14 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * Processes this repo is allowed to recognise as its own, and therefore to
+ * kill. `bun run` hands a `#!/usr/bin/env node` bin like Vite's to Node, so a
+ * dev server shows up as `node`; `bun run --bun` keeps it in Bun's runtime and
+ * it shows up as `bun`. Anything else is somebody else's server.
+ */
+const OURS = /^(node|bun)$/i;
 
 const GROUPS = {
   compare: [{ port: 5100, label: 'comparison harness', dir: 'compare', served: 'dev' }],
@@ -99,7 +107,7 @@ async function check() {
       if (!existsSync(built)) {
         console.error(
           `\n  ${target.dir} has not been built yet.` +
-            `\n  \`pnpm serve\` only serves existing output. Run \`pnpm start\` instead.\n`,
+            `\n  \`bun run serve\` only serves existing output. Run \`bun run start\` instead.\n`,
         );
         process.exit(1);
       }
@@ -116,13 +124,13 @@ async function check() {
     console.error(`    ${entry.port}  ${entry.label.padEnd(20)} held by ${holders}`);
   }
 
-  const ours = busy.some((entry) => entry.holders.some((h) => /node/i.test(h.command)));
-  const foreign = busy.some((entry) => entry.holders.some((h) => !/node/i.test(h.command)));
+  const ours = busy.some((entry) => entry.holders.some((h) => OURS.test(h.command)));
+  const foreign = busy.some((entry) => entry.holders.some((h) => !OURS.test(h.command)));
 
   console.error('');
   if (ours) {
     console.error('  A previous run is still going. Free the ports with:\n');
-    console.error('      pnpm stop\n');
+    console.error('      bun run stop\n');
   }
   if (foreign) {
     console.error('  Something outside this repo holds a port. On macOS, System Settings >');
@@ -137,7 +145,7 @@ function free() {
   for (const target of targets) {
     for (const holder of listenersOn(target.port)) {
       // Only ever kill this prototype's own dev servers.
-      if (!/^node$/i.test(holder.command)) {
+      if (!OURS.test(holder.command)) {
         console.log(`  ${target.port}  left alone, held by ${holder.command} (pid ${holder.pid})`);
         continue;
       }
@@ -157,6 +165,6 @@ function free() {
 if (mode === 'check') await check();
 else if (mode === 'free') free();
 else {
-  console.error('Usage: node scripts/ports.mjs <check|free> [compare|option1|option2|all] [--built]');
+  console.error('Usage: bun scripts/ports.mjs <check|free> [compare|option1|option2|all] [--built]');
   process.exit(2);
 }

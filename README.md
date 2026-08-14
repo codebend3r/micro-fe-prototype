@@ -27,16 +27,51 @@ one a plain DOM node to own.
 
 ## Requirements
 
-- Node 20 or newer (developed on 22)
-- pnpm 10 or newer (`corepack enable` is enough if you do not have it)
+- Bun 1.2 or newer (developed on 1.3), used as both the package manager and the script runner
+- Node 20 or newer (developed on 22). Vite's binary carries a `#!/usr/bin/env node` shebang and
+  `bun run` honours it, so Node is still the runtime that builds and serves the apps. Bun drives
+  everything above that.
+
+### Installing Bun
+
+Pick whichever line matches your machine:
+
+```bash
+# macOS, Linux, WSL
+curl -fsSL https://bun.sh/install | bash
+
+# macOS, via Homebrew
+brew install oven-sh/bun/bun
+
+# any platform, if you already have Node
+npm install -g bun
+
+# Windows, in PowerShell
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+The shell installer drops Bun in `~/.bun/bin` and appends that to your `PATH`, so open a new
+terminal afterwards. Confirm it took:
+
+```bash
+bun --version    # 1.2.0 or newer
+```
+
+Already have Bun but it is old? `bun upgrade`.
 
 ## Install
 
 ```bash
-pnpm install
+bun install
 ```
 
 One install covers all eleven workspace packages. Nothing else needs installing per app.
+
+Bun reads the workspace list from the `workspaces` field in the root `package.json` and links the
+`@mfe/*` packages from source, so edits to `packages/` are picked up without a rebuild. It installs
+with the isolated linker, which matters here: Option 2's `app1` genuinely gets React 18 while
+everything else gets React 19, rather than one hoisted copy winning. `esbuild` is listed under
+`trustedDependencies` so its postinstall can fetch the platform binary Vite needs.
 
 ---
 
@@ -45,7 +80,7 @@ One install covers all eleven workspace packages. Nothing else needs installing 
 ### Both options at once, which is the point of this repo
 
 ```bash
-pnpm start
+bun run start
 ```
 
 Open **http://localhost:5100**.
@@ -57,7 +92,7 @@ each Shell streams back. Seven servers come up in total.
 ### Option 1 on its own
 
 ```bash
-pnpm start:option1
+bun run start:option1
 ```
 
 Open **http://localhost:5010**.
@@ -70,13 +105,13 @@ If you would rather see the three processes separately, this is the same thing i
 
 ```bash
 # terminal 1
-pnpm --filter @o1/app1 build && pnpm --filter @o1/app1 preview   # :5011
+bun run --filter @o1/app1 build && bun run --filter @o1/app1 preview   # :5011
 
 # terminal 2
-pnpm --filter @o1/app2 build && pnpm --filter @o1/app2 preview   # :5012
+bun run --filter @o1/app2 build && bun run --filter @o1/app2 preview   # :5012
 
 # terminal 3
-pnpm --filter @o1/shell build && pnpm --filter @o1/shell preview # :5010
+bun run --filter @o1/shell build && bun run --filter @o1/shell preview # :5010
 ```
 
 Order does not matter. The Shell only reaches for a remote when you navigate to it, so you can
@@ -85,7 +120,7 @@ start a remote after the Shell is already up.
 ### Option 2 on its own
 
 ```bash
-pnpm start:option2
+bun run start:option2
 ```
 
 Open **http://localhost:5020**.
@@ -95,13 +130,13 @@ three terminal version:
 
 ```bash
 # terminal 1
-pnpm --filter @o2/app1 build && pnpm --filter @o2/app1 preview   # :5021, React 18
+bun run --filter @o2/app1 build && bun run --filter @o2/app1 preview   # :5021, React 18
 
 # terminal 2
-pnpm --filter @o2/app2 build && pnpm --filter @o2/app2 preview   # :5022, React 19
+bun run --filter @o2/app2 build && bun run --filter @o2/app2 preview   # :5022, React 19
 
 # terminal 3
-pnpm --filter @o2/shell build && pnpm --filter @o2/shell preview # :5020
+bun run --filter @o2/shell build && bun run --filter @o2/shell preview # :5020
 ```
 
 ### Running a single remote by itself
@@ -111,20 +146,20 @@ boots its own session store and, in Option 2, drives its own `mount(el, props)` 
 way the Shell does:
 
 ```bash
-pnpm --filter @o1/app1 dev    # http://localhost:5011
-pnpm --filter @o2/app1 dev    # http://localhost:5021
+bun run --filter @o1/app1 dev    # http://localhost:5011
+bun run --filter @o2/app1 dev    # http://localhost:5021
 ```
 
 ### Dev mode with hot reload
 
 ```bash
-pnpm dev            # all seven, harness included
-pnpm dev:option1    # just Option 1's three
-pnpm dev:option2    # just Option 2's three
+bun run dev            # all seven, harness included
+bun run dev:option1    # just Option 1's three
+bun run dev:option2    # just Option 2's three
 ```
 
 Dev mode serves `remoteEntry.js` straight off each remote's Vite dev server, so there is no build
-step and no watcher to babysit. Use it while editing. Use `pnpm start` when you care about the
+step and no watcher to babysit. Use it while editing. Use `bun run start` when you care about the
 numbers: module federation chunking and bundle sizes are only meaningful against built output, and
 the probe panel labels which mode it is measuring.
 
@@ -133,27 +168,27 @@ the probe panel labels which mode it is measuring.
 `Ctrl+C` stops everything a script started. If a run was killed uncleanly and left servers behind:
 
 ```bash
-pnpm stop
+bun run stop
 ```
 
-That frees only this prototype's ports, and only if a `node` process is holding them. It will not
-touch anything else listening nearby.
+That frees only this prototype's ports, and only if a `node` or `bun` process is holding them. It
+will not touch anything else listening nearby.
 
 ### Every script
 
 | Command | What it does |
 | --- | --- |
-| `pnpm start` | Build all six apps, serve them, and start the comparison harness |
-| `pnpm start:option1` | Build and serve Option 1 only |
-| `pnpm start:option2` | Build and serve Option 2 only |
-| `pnpm dev` | All seven on Vite dev servers with HMR |
-| `pnpm dev:option1` / `pnpm dev:option2` | One stack on dev servers |
-| `pnpm build` | Build all six |
-| `pnpm build:option1` / `pnpm build:option2` | Build one stack |
-| `pnpm serve` | Serve the existing build without rebuilding |
-| `pnpm stop` | Free the prototype's ports |
-| `pnpm typecheck` | `tsc --noEmit` across the workspace |
-| `pnpm clean` | Remove all `dist` folders |
+| `bun run start` | Build all six apps, serve them, and start the comparison harness |
+| `bun run start:option1` | Build and serve Option 1 only |
+| `bun run start:option2` | Build and serve Option 2 only |
+| `bun run dev` | All seven on Vite dev servers with HMR |
+| `bun run dev:option1` / `bun run dev:option2` | One stack on dev servers |
+| `bun run build` | Build all six |
+| `bun run build:option1` / `bun run build:option2` | Build one stack |
+| `bun run serve` | Serve the existing build without rebuilding |
+| `bun run stop` | Free the prototype's ports |
+| `bun run typecheck` | `tsc --noEmit` across the workspace |
+| `bun run clean` | Remove all `dist` folders |
 
 ### Ports
 
@@ -367,16 +402,20 @@ The files worth reading, in this order:
 
 ## Troubleshooting
 
-**`Cannot start: these ports are already taken`.** A previous run is still alive. Run `pnpm stop`.
-Every script runs this check before starting anything, so you get one clear message instead of
-seven processes failing at once.
+**`Cannot start: these ports are already taken`.** A previous run is still alive. Run
+`bun run stop`. Every script runs this check before starting anything, so you get one clear message
+instead of seven processes failing at once.
 
 **Something outside this repo holds a port.** On macOS, AirPlay Receiver listens on 5000 and 7000.
 That is why the harness sits on 5100. Turn it off under System Settings > General > AirDrop &
 Handoff if you need those ports back for something else.
 
-**`... has not been built yet`.** `pnpm serve` only serves existing output. Use `pnpm start`, which
-builds first.
+**`... has not been built yet`.** `bun run serve` only serves existing output. Use `bun run start`,
+which builds first.
+
+**Say `bun run build`, not `bun build`.** `build`, `test`, `install`, `link` and `x` are Bun's own
+subcommands, so `bun build` fires Bun's bundler instead of this repo's build script. The `bun run`
+prefix is spelled out everywhere above for that reason, and it is always safe.
 
 **A remote never loads and the panel keeps spinning.** That remote's server is not running. Check
 the port table above, and remember the Shell only fetches a remote when you navigate to its route,

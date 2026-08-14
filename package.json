@@ -4,24 +4,30 @@
   "private": true,
   "type": "module",
   "description": "Two micro frontend integration strategies (shared React singleton vs independent React versions) running side by side",
+  "workspaces": [
+    "packages/*",
+    "compare",
+    "option1-shared/*",
+    "option2-independent/*"
+  ],
   "scripts": {
-    "start": "node scripts/ports.mjs check all && pnpm build && pnpm serve",
-    "start:option1": "node scripts/ports.mjs check option1 && pnpm build:option1 && pnpm serve:option1",
-    "start:option2": "node scripts/ports.mjs check option2 && pnpm build:option2 && pnpm serve:option2",
+    "start": "bun scripts/ports.mjs check all && bun run build && bun run serve",
+    "start:option1": "bun scripts/ports.mjs check option1 && bun run build:option1 && bun run serve:option1",
+    "start:option2": "bun scripts/ports.mjs check option2 && bun run build:option2 && bun run serve:option2",
 
-    "dev": "node scripts/ports.mjs check all && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"pnpm --filter compare dev\" \"pnpm --filter @o1/shell dev\" \"pnpm --filter @o1/app1 dev\" \"pnpm --filter @o1/app2 dev\" \"pnpm --filter @o2/shell dev\" \"pnpm --filter @o2/app1 dev\" \"pnpm --filter @o2/app2 dev\"",
-    "dev:option1": "node scripts/ports.mjs check option1 && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"pnpm --filter @o1/shell dev\" \"pnpm --filter @o1/app1 dev\" \"pnpm --filter @o1/app2 dev\"",
-    "dev:option2": "node scripts/ports.mjs check option2 && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"pnpm --filter @o2/shell dev\" \"pnpm --filter @o2/app1 dev\" \"pnpm --filter @o2/app2 dev\"",
+    "dev": "bun scripts/ports.mjs check all && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"bun run --cwd compare dev\" \"bun run --cwd option1-shared/shell dev\" \"bun run --cwd option1-shared/app1 dev\" \"bun run --cwd option1-shared/app2 dev\" \"bun run --cwd option2-independent/shell dev\" \"bun run --cwd option2-independent/app1 dev\" \"bun run --cwd option2-independent/app2 dev\"",
+    "dev:option1": "bun scripts/ports.mjs check option1 && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"bun run --cwd option1-shared/shell dev\" \"bun run --cwd option1-shared/app1 dev\" \"bun run --cwd option1-shared/app2 dev\"",
+    "dev:option2": "bun scripts/ports.mjs check option2 && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"bun run --cwd option2-independent/shell dev\" \"bun run --cwd option2-independent/app1 dev\" \"bun run --cwd option2-independent/app2 dev\"",
 
-    "build": "pnpm --filter \"@o1/*\" --filter \"@o2/*\" build",
-    "build:option1": "pnpm --filter \"@o1/*\" build",
-    "build:option2": "pnpm --filter \"@o2/*\" build",
+    "build": "bun run build:option1 && bun run build:option2",
+    "build:option1": "bun run --filter \"@o1/*\" build",
+    "build:option2": "bun run --filter \"@o2/*\" build",
 
-    "serve": "node scripts/ports.mjs check all --built && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"pnpm --filter compare dev\" \"pnpm --filter @o1/shell preview\" \"pnpm --filter @o1/app1 preview\" \"pnpm --filter @o1/app2 preview\" \"pnpm --filter @o2/shell preview\" \"pnpm --filter @o2/app1 preview\" \"pnpm --filter @o2/app2 preview\"",
-    "serve:option1": "node scripts/ports.mjs check option1 --built && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"pnpm --filter @o1/shell preview\" \"pnpm --filter @o1/app1 preview\" \"pnpm --filter @o1/app2 preview\"",
-    "serve:option2": "node scripts/ports.mjs check option2 --built && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"pnpm --filter @o2/shell preview\" \"pnpm --filter @o2/app1 preview\" \"pnpm --filter @o2/app2 preview\"",
+    "serve": "bun scripts/ports.mjs check all --built && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"bun run --cwd compare dev\" \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\" \"bun run --cwd option2-independent/shell preview\" \"bun run --cwd option2-independent/app1 preview\" \"bun run --cwd option2-independent/app2 preview\"",
+    "serve:option1": "bun scripts/ports.mjs check option1 --built && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\"",
+    "serve:option2": "bun scripts/ports.mjs check option2 --built && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"bun run --cwd option2-independent/shell preview\" \"bun run --cwd option2-independent/app1 preview\" \"bun run --cwd option2-independent/app2 preview\"",
 
-    "stop": "node scripts/ports.mjs free all",
+    "stop": "bun scripts/ports.mjs free all",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "clean": "rm -rf option1-shared/*/dist option2-independent/*/dist compare/dist"
   },
@@ -30,5 +36,10 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.6"
   },
-  "packageManager": "pnpm@10.32.0"
+  "trustedDependencies": [
+    "esbuild"
+  ],
+  "engines": {
+    "bun": ">=1.2.0"
+  }
 }
