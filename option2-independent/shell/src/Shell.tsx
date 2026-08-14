@@ -107,7 +107,7 @@ function ShellChrome() {
               title="Catalog"
               role="writes the shared state"
               remote="app1"
-              port={5021}
+              address={__REMOTE_APP1__}
               react="18"
             >
               <RemoteMount name="app1" loader={loadApp1} props={mountProps} />
@@ -119,7 +119,7 @@ function ShellChrome() {
               title="Selection"
               role="reads the shared state"
               remote="app2"
-              port={5022}
+              address={__REMOTE_APP2__}
               react="19"
             >
               <RemoteMount name="app2" loader={loadApp2} props={mountProps} />
@@ -143,14 +143,14 @@ function RemoteSlot({
   title,
   role,
   remote,
-  port,
+  address,
   react,
   children,
 }: {
   title: string;
   role: string;
   remote: string;
-  port: number;
+  address: AppAddress;
   react: string;
   children: ReactNode;
 }) {
@@ -162,7 +162,7 @@ function RemoteSlot({
           <h1>{title}</h1>
         </div>
         <span className="pill pill-accent">
-          {remote} @ localhost:{port}, React {react}
+          {remote} @ {address.label}, React {react}
         </span>
       </div>
 

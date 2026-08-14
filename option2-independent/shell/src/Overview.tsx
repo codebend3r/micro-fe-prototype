@@ -1,11 +1,13 @@
 import { useSession } from '@mfe/session';
 import { Code } from '@mfe/ui/chrome';
 
+// The entries are interpolated rather than typed out, so the sample stays true
+// whether this build points at localhost or at a deployed path.
 const SHELL_CONFIG = `federation({
   name: 'shell',
   remotes: {
-    app1: { type: 'module', entry: 'http://localhost:5021/remoteEntry.js' },
-    app2: { type: 'module', entry: 'http://localhost:5022/remoteEntry.js' },
+    app1: { type: 'module', entry: '${__REMOTE_APP1__.url}remoteEntry.js' },
+    app2: { type: 'module', entry: '${__REMOTE_APP2__.url}remoteEntry.js' },
   },
   // Nothing shared. app1 ships React 18, app2 ships React 19,
   // and neither has to ask the other for permission to upgrade.

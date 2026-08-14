@@ -3,6 +3,8 @@
 Two micro frontend integration strategies, built for real and running at the same time so they
 can be compared side by side.
 
+**Live: [micro-fe-prototype.netlify.app](https://micro-fe-prototype.netlify.app)**
+
 Both systems are the same product: a Shell (host) that owns routing, layout and session, plus two
 remotes: `app1` (Catalog, which writes shared state) and `app2` (Selection, which reads it). Each
 remote is independently built and deployed, and loaded at runtime from its own `remoteEntry.js`.
@@ -185,6 +187,7 @@ will not touch anything else listening nearby.
 | `bun run dev:option1` / `bun run dev:option2` | One stack on dev servers |
 | `bun run build` | Build all six |
 | `bun run build:option1` / `bun run build:option2` | Build one stack |
+| `bun run build:netlify` | Build all seven for one origin and assemble `dist/` |
 | `bun run serve` | Serve the existing build without rebuilding |
 | `bun run stop` | Free the prototype's ports |
 | `bun run typecheck` | `tsc --noEmit` across the workspace |
@@ -205,6 +208,55 @@ will not touch anything else listening nearby.
 Every port is pinned with `strictPort: true`, on purpose. The Shells resolve their remotes by
 absolute URL, so a remote silently landing on a different port would be worse than a failure. The
 harness deliberately avoids port 5000, which macOS AirPlay Receiver occupies by default.
+
+---
+
+## The deployed copy
+
+**[micro-fe-prototype.netlify.app](https://micro-fe-prototype.netlify.app)** runs the same seven
+apps, built the same way, on Netlify.
+
+Locally the seven apps are seven origins. A static host hands out one, so the deployed build gives
+each app its own path prefix on that single origin instead:
+
+| Path | What |
+| --- | --- |
+| `/` | Comparison harness |
+| `/option1/shell/` | Option 1 Shell |
+| `/option1/app1/` | Option 1 `app1`, React 19, serves `remoteEntry.js` |
+| `/option1/app2/` | Option 1 `app2`, React 19 |
+| `/option2/shell/` | Option 2 Shell |
+| `/option2/app1/` | Option 2 `app1`, **React 18** |
+| `/option2/app2/` | Option 2 `app2`, React 19 |
+
+`/option1` and `/option2` redirect to their Shells, for typing by hand.
+
+Nothing about the architecture changes. Each app is still built entirely on its own, the Shells
+still fetch `remoteEntry.js` at runtime and still resolve remotes by URL, and a remote can still be
+rebuilt and redeployed without the Shell being rebuilt. Only the addresses are different, and only
+because the host offers one origin rather than seven.
+
+`scripts/deploy-target.ts` is the single place those addresses are decided. Every vite config reads
+its `base` and its remote entries from it, and the two Shells and the harness get the addresses they
+print on screen injected from it at build time, so nothing has a port number typed into it. Set
+`MFE_TARGET=netlify` and the whole workspace builds for paths; leave it unset and it builds for
+localhost. `scripts/assemble-dist.mjs` then stacks the seven `dist` folders into one publishable
+`dist/`, and `netlify.toml` publishes it.
+
+```bash
+bun run build:netlify    # MFE_TARGET=netlify, build all seven, assemble dist/
+```
+
+Two things the single origin changes, both cosmetic:
+
+- The probe's "JavaScript by origin" table collapses to one row. Locally it is one row per port,
+  which is a nicer illustration of where the bytes came from.
+- `Timing-Allow-Origin` stops mattering. Deployed, every script is same origin, so the browser
+  reports transfer sizes without being asked. The headers are still sent, because locally they are
+  the only reason the numbers exist at all.
+
+Both Shells route on the URL hash, so every path above is a real file on disk and the deploy needs
+no SPA fallback rule.
 
 ---
 
@@ -252,16 +304,19 @@ the probe counts distinct instances by the identity of `React.createElement`, no
 Two apps reporting `19.2.8` are still two copies if the function is not the same function.
 
 Transfer sizes come from the Resource Timing API. Every app sends `Timing-Allow-Origin: *` so the
-Shell can read sizes for scripts fetched from the remotes' origins.
+Shell can read sizes for scripts fetched from the remotes' origins. On the deployed copy there is
+only one origin, so the browser reports them regardless.
 
 Both Shells render the identical `ProbePanel` from `packages/ui`, so the two sides are measured by
 the same code.
 
 ---
 
-## How each option would be deployed
+## How each option would be deployed for real
 
-Nothing here is wired to a real host. This section is the theory the prototype is shaped around.
+The Netlify deploy above is one origin and one pipeline, which is the convenient shape for a
+prototype and the wrong shape for the thing it is a prototype of. This section is the theory the
+prototype is shaped around: what changes when each app belongs to a different team.
 
 ### What both options share
 
@@ -275,11 +330,12 @@ https://app1.ops.example.com/       app1  ->  /remoteEntry.js
 https://app2.ops.example.com/       app2  ->  /remoteEntry.js
 ```
 
-The remote URLs are hardcoded to localhost in this repo. In production they come from config, in
-one of two ways.
+The remote URLs come from config, in one of two ways.
 
 **Build time, simplest.** The Shell reads them from the environment, which means one Shell build
-per environment:
+per environment. This repo already does exactly this, with `MFE_TARGET` selecting an address book
+in `scripts/deploy-target.ts`. A real system would read the origins themselves rather than pick a
+preset:
 
 ```ts
 // shell/vite.config.ts
@@ -377,7 +433,7 @@ Each app is genuinely independent, so the pipeline gets simpler and the artifact
 ## Layout
 
 ```
-scripts/          port preflight and build noise filtering
+scripts/          where every app lives, port preflight, deploy assembly, build noise filtering
 packages/
   shared-core/    framework agnostic: store, event bus, probe, catalog. No React.
   session/        the React binding. This module is the whole argument, in 40 lines.
@@ -397,6 +453,7 @@ The files worth reading, in this order:
 | `option1-shared/shell/src/Shell.tsx` | `lazy(() => import('app1/App'))`, and that is the whole seam |
 | `option2-independent/shell/src/RemoteMount.tsx` | The wrapper that drives `mount(el, props)` |
 | `option2-independent/app1/src/mount.tsx` | The contract, implemented on React 18 |
+| `scripts/deploy-target.ts` | The one place any app's address is written down |
 
 ---
 

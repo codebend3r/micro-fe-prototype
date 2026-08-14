@@ -1,11 +1,13 @@
 import { useSession } from '@mfe/session';
 import { Code } from '@mfe/ui/chrome';
 
+// The entries are interpolated rather than typed out, so the sample stays true
+// whether this build points at localhost or at a deployed path.
 const SHELL_CONFIG = `federation({
   name: 'shell',
   remotes: {
-    app1: { type: 'module', entry: 'http://localhost:5011/remoteEntry.js' },
-    app2: { type: 'module', entry: 'http://localhost:5012/remoteEntry.js' },
+    app1: { type: 'module', entry: '${__REMOTE_APP1__.url}remoteEntry.js' },
+    app2: { type: 'module', entry: '${__REMOTE_APP2__.url}remoteEntry.js' },
   },
   shared: {
     react:            { singleton: true, requiredVersion: '^19.0.0' },

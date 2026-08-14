@@ -96,13 +96,23 @@ function ShellChrome() {
           {state.route === '/overview' ? <Overview /> : null}
 
           {state.route === '/catalog' ? (
-            <RemoteSlot title="Catalog" role="writes the shared state" remote="app1" port={5011}>
+            <RemoteSlot
+              title="Catalog"
+              role="writes the shared state"
+              remote="app1"
+              address={__REMOTE_APP1__}
+            >
               <CatalogApp />
             </RemoteSlot>
           ) : null}
 
           {state.route === '/selection' ? (
-            <RemoteSlot title="Selection" role="reads the shared state" remote="app2" port={5012}>
+            <RemoteSlot
+              title="Selection"
+              role="reads the shared state"
+              remote="app2"
+              address={__REMOTE_APP2__}
+            >
               <SelectionApp />
             </RemoteSlot>
           ) : null}
@@ -124,13 +134,13 @@ function RemoteSlot({
   title,
   role,
   remote,
-  port,
+  address,
   children,
 }: {
   title: string;
   role: string;
   remote: string;
-  port: number;
+  address: AppAddress;
   children: ReactNode;
 }) {
   return (
@@ -141,7 +151,7 @@ function RemoteSlot({
           <h1>{title}</h1>
         </div>
         <span className="pill pill-accent">
-          {remote} @ localhost:{port}
+          {remote} @ {address.label}
         </span>
       </div>
 

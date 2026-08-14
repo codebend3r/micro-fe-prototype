@@ -28,16 +28,18 @@ type Telemetry = {
   selectedItems: number;
 };
 
+// Injected by compare/vite.config.ts, because the two Shells sit on their own
+// origins locally and on their own paths once deployed.
 const SHELLS = [
   {
     option: 1 as const,
-    url: 'http://localhost:5010/',
+    address: __SHELL_ONE__,
     title: 'Shared React singleton',
     subtitle: 'shell + app1 + app2 on one React 19',
   },
   {
     option: 2 as const,
-    url: 'http://localhost:5020/',
+    address: __SHELL_TWO__,
     title: 'Independent React versions',
     subtitle: 'app1 on React 18, app2 on React 19',
   },
@@ -287,13 +289,13 @@ export function Compare() {
                 </strong>
                 <span className="small muted">{shell.subtitle}</span>
               </span>
-              <a className="small mono" href={shell.url} target="_blank" rel="noreferrer">
-                {shell.url.replace('http://', '')}
+              <a className="small mono" href={shell.address.url} target="_blank" rel="noreferrer">
+                {shell.address.label}
               </a>
             </header>
             <iframe
               title={`Option ${shell.option}`}
-              src={shell.url}
+              src={shell.address.url}
               ref={(node) => {
                 frames.current[shell.option] = node;
               }}

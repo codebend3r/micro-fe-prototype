@@ -2,10 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
 import { quietLogger, silenceEmptyChunks } from '../../scripts/vite-quiet';
+import { at, remoteEntry } from '../../scripts/deploy-target';
 
 const headers = { 'Timing-Allow-Origin': '*' };
 
 export default defineConfig({
+  base: at.o2shell.base,
   plugins: [
     react(),
     federation({
@@ -16,12 +18,12 @@ export default defineConfig({
         app1: {
           type: 'module',
           name: 'app1',
-          entry: 'http://localhost:5021/remoteEntry.js',
+          entry: remoteEntry('o2app1'),
         },
         app2: {
           type: 'module',
           name: 'app2',
-          entry: 'http://localhost:5022/remoteEntry.js',
+          entry: remoteEntry('o2app2'),
         },
       },
       // The defining choice of Option 2: nothing is shared. Every app carries
@@ -30,6 +32,12 @@ export default defineConfig({
       shared: {},
     }),
   ],
+  // The Shell prints where each remote came from. That address is only known
+  // at build time, so it is injected rather than hardcoded.
+  define: {
+    __REMOTE_APP1__: JSON.stringify(at.o2app1),
+    __REMOTE_APP2__: JSON.stringify(at.o2app2),
+  },
   resolve: { dedupe: ['react', 'react-dom'] },
   customLogger: quietLogger(),
   build: {

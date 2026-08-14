@@ -2,11 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
 import { quietLogger, silenceEmptyChunks } from '../../scripts/vite-quiet';
+import { at } from '../../scripts/deploy-target';
 
 const headers = { 'Timing-Allow-Origin': '*' };
 
 export default defineConfig({
-  base: 'http://localhost:5011/',
+  // An origin locally, a path prefix when deployed. Either way it is absolute,
+  // because the Shell resolves these chunks from a page it serves itself.
+  base: at.o1app1.base,
   plugins: [
     react(),
     federation({

@@ -22,6 +22,7 @@
     "build": "bun run build:option1 && bun run build:option2",
     "build:option1": "bun run --filter \"@o1/*\" build",
     "build:option2": "bun run --filter \"@o2/*\" build",
+    "build:netlify": "export MFE_TARGET=netlify && bun run --cwd compare build && bun run build && bun scripts/assemble-dist.mjs",
 
     "serve": "bun scripts/ports.mjs check all --built && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"bun run --cwd compare dev\" \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\" \"bun run --cwd option2-independent/shell preview\" \"bun run --cwd option2-independent/app1 preview\" \"bun run --cwd option2-independent/app2 preview\"",
     "serve:option1": "bun scripts/ports.mjs check option1 --built && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\"",
@@ -29,7 +30,7 @@
 
     "stop": "bun scripts/ports.mjs free all",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "clean": "rm -rf option1-shared/*/dist option2-independent/*/dist compare/dist"
+    "clean": "rm -rf dist option1-shared/*/dist option2-independent/*/dist compare/dist"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",
