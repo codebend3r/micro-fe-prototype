@@ -1,0 +1,10 @@
+packages:
+  - 'packages/*'
+  - 'compare'
+  - 'option1-shared/*'
+  - 'option2-independent/*'
+
+# pnpm 10 blocks dependency build scripts by default. esbuild needs its
+# postinstall to download the platform binary that Vite depends on.
+onlyBuiltDependencies:
+  - esbuild
