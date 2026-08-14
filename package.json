@@ -1,0 +1,21 @@
+{
+  "name": "micro-fe-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Two micro frontend integration strategies (shared React singleton vs independent React versions) running side by side",
+  "scripts": {
+    "build": "pnpm --filter \"@o1/*\" --filter \"@o2/*\" build",
+    "start": "pnpm build && pnpm serve",
+    "serve": "concurrently -k -P -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c cyan,blue,blue,blue,yellow,yellow,yellow \"pnpm --filter compare dev\" \"pnpm --filter @o1/shell preview\" \"pnpm --filter @o1/app1 preview\" \"pnpm --filter @o1/app2 preview\" \"pnpm --filter @o2/shell preview\" \"pnpm --filter @o2/app1 preview\" \"pnpm --filter @o2/app2 preview\"",
+    "dev": "concurrently -k -P -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c cyan,blue,blue,blue,yellow,yellow,yellow \"pnpm --filter compare dev\" \"pnpm --filter @o1/shell dev\" \"pnpm --filter @o1/app1 dev\" \"pnpm --filter @o1/app2 dev\" \"pnpm --filter @o2/shell dev\" \"pnpm --filter @o2/app1 dev\" \"pnpm --filter @o2/app2 dev\"",
+    "clean": "rm -rf option1-shared/*/dist option2-independent/*/dist compare/dist",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6"
+  },
+  "packageManager": "pnpm@10.32.0"
+}

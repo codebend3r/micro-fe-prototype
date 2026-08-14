@@ -1,0 +1,27 @@
+{
+  "name": "@mfe/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./styles.css": "./styles.css",
+    "./probe-panel": {
+      "types": "./probe-panel.d.ts",
+      "default": "./probe-panel.jsx"
+    },
+    "./chrome": {
+      "types": "./chrome.d.ts",
+      "default": "./chrome.jsx"
+    },
+    "./shell-runtime": {
+      "types": "./shell-runtime.d.ts",
+      "default": "./shell-runtime.js"
+    }
+  },
+  "dependencies": {
+    "@mfe/shared-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
