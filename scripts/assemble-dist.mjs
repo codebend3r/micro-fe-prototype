@@ -1,5 +1,5 @@
 /**
- * Lays the seven builds out as one publishable folder.
+ * Lays the three builds out as one publishable folder.
  *
  * Each app is still built entirely on its own, exactly as it would be if it
  * belonged to a different team on a different pipeline. This step only decides
@@ -19,13 +19,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'dist');
 
 const APPS = [
-  { pkg: 'compare', to: '.' },
-  { pkg: 'option1-shared/shell', to: 'option1/shell' },
-  { pkg: 'option1-shared/app1', to: 'option1/app1' },
-  { pkg: 'option1-shared/app2', to: 'option1/app2' },
-  { pkg: 'option2-independent/shell', to: 'option2/shell' },
-  { pkg: 'option2-independent/app1', to: 'option2/app1' },
-  { pkg: 'option2-independent/app2', to: 'option2/app2' },
+  { pkg: 'world', to: '.' },
+  { pkg: 'rick', to: 'apps/rick' },
+  { pkg: 'morty', to: 'apps/morty' },
 ];
 
 if (process.env.MFE_TARGET !== 'netlify') {

@@ -12,7 +12,6 @@ export interface SelectionItem {
 export interface SessionState {
   user: { name: string; role: string };
   theme: 'dark' | 'light';
-  route: string;
   selection: SelectionItem[];
 }
 
@@ -24,7 +23,6 @@ export interface Store<T> {
 
 export interface SessionStore extends Store<SessionState> {
   setTheme(theme: 'dark' | 'light'): void;
-  navigate(route: string): void;
   addToSelection(sku: string): void;
   removeFromSelection(sku: string): void;
   clearSelection(): void;
@@ -49,12 +47,8 @@ export interface AppRecord {
   role: 'shell' | 'remote';
   reactVersion: string;
   reactId: string;
-  coreId: string;
-  sessionId: string | null;
-  contextConnected?: boolean;
   themeSeen?: string | null;
-  orderCountSeen?: number | null;
-  channel?: string;
+  location?: string | null;
 }
 
 export interface InstanceGroup {
@@ -66,8 +60,6 @@ export interface InstanceGroup {
 export interface ProbeSnapshot {
   apps: AppRecord[];
   reactInstances: InstanceGroup[];
-  coreInstances: InstanceGroup[];
-  sessionInstances: InstanceGroup[];
 }
 
 export interface ScriptMeasurement {
@@ -81,13 +73,11 @@ export function createSessionStore(): SessionStore;
 export function createBus(): Bus;
 export const bus: Bus;
 
-export const CORE_MODULE_TOKEN: object;
 export function registerApp(input: {
   app: string;
   label: string;
   role: 'shell' | 'remote';
   react: unknown;
-  sessionToken?: unknown;
 }): AppRecord;
 export function updateApp(app: string, patch: Partial<AppRecord>): void;
 export function unregisterApp(app: string): void;

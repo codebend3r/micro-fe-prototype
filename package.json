@@ -1,36 +1,24 @@
 {
   "name": "micro-fe-prototype",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Two micro frontend integration strategies (shared React singleton vs independent React versions) running side by side",
+  "description": "A micro frontend: the world shell lazy loads the rick and morty remotes over module federation, every app on its own React 19 and wouter",
   "workspaces": [
     "packages/*",
-    "compare",
-    "option1-shared/*",
-    "option2-independent/*"
+    "world",
+    "rick",
+    "morty"
   ],
   "scripts": {
-    "start": "bun scripts/ports.mjs check all && bun run build && bun run serve",
-    "start:option1": "bun scripts/ports.mjs check option1 && bun run build:option1 && bun run serve:option1",
-    "start:option2": "bun scripts/ports.mjs check option2 && bun run build:option2 && bun run serve:option2",
-
-    "dev": "bun scripts/ports.mjs check all && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"bun run --cwd compare dev\" \"bun run --cwd option1-shared/shell dev\" \"bun run --cwd option1-shared/app1 dev\" \"bun run --cwd option1-shared/app2 dev\" \"bun run --cwd option2-independent/shell dev\" \"bun run --cwd option2-independent/app1 dev\" \"bun run --cwd option2-independent/app2 dev\"",
-    "dev:option1": "bun scripts/ports.mjs check option1 && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"bun run --cwd option1-shared/shell dev\" \"bun run --cwd option1-shared/app1 dev\" \"bun run --cwd option1-shared/app2 dev\"",
-    "dev:option2": "bun scripts/ports.mjs check option2 && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"bun run --cwd option2-independent/shell dev\" \"bun run --cwd option2-independent/app1 dev\" \"bun run --cwd option2-independent/app2 dev\"",
-
-    "build": "bun run build:option1 && bun run build:option2",
-    "build:option1": "bun run --filter \"@o1/*\" build",
-    "build:option2": "bun run --filter \"@o2/*\" build",
-    "build:netlify": "export MFE_TARGET=netlify && bun run --cwd compare build && bun run build && bun scripts/assemble-dist.mjs",
-
-    "serve": "bun scripts/ports.mjs check all --built && concurrently -k -n compare,o1-shell,o1-app1,o1-app2,o2-shell,o2-app1,o2-app2 -c magenta,blue,cyan,cyan,yellow,green,green \"bun run --cwd compare dev\" \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\" \"bun run --cwd option2-independent/shell preview\" \"bun run --cwd option2-independent/app1 preview\" \"bun run --cwd option2-independent/app2 preview\"",
-    "serve:option1": "bun scripts/ports.mjs check option1 --built && concurrently -k -n o1-shell,o1-app1,o1-app2 -c blue,cyan,cyan \"bun run --cwd option1-shared/shell preview\" \"bun run --cwd option1-shared/app1 preview\" \"bun run --cwd option1-shared/app2 preview\"",
-    "serve:option2": "bun scripts/ports.mjs check option2 --built && concurrently -k -n o2-shell,o2-app1,o2-app2 -c yellow,green,green \"bun run --cwd option2-independent/shell preview\" \"bun run --cwd option2-independent/app1 preview\" \"bun run --cwd option2-independent/app2 preview\"",
-
-    "stop": "bun scripts/ports.mjs free all",
+    "start": "bun scripts/ports.mjs check && bun run build && bun run serve",
+    "dev": "bun scripts/ports.mjs check && concurrently -k -n world,rick,morty -c blue,green,yellow \"bun run --cwd world dev\" \"bun run --cwd rick dev\" \"bun run --cwd morty dev\"",
+    "build": "bun run --filter \"@app/*\" build",
+    "build:netlify": "export MFE_TARGET=netlify && bun run build && bun scripts/assemble-dist.mjs",
+    "serve": "bun scripts/ports.mjs check --built && concurrently -k -n world,rick,morty -c blue,green,yellow \"bun run --cwd world preview\" \"bun run --cwd rick preview\" \"bun run --cwd morty preview\"",
+    "stop": "bun scripts/ports.mjs free",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "clean": "rm -rf dist option1-shared/*/dist option2-independent/*/dist compare/dist"
+    "clean": "rm -rf dist world/dist rick/dist morty/dist"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",

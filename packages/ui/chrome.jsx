@@ -1,6 +1,6 @@
 /**
- * Chrome that both options render identically, so that any visual difference
- * between the two stacks is a real difference and not a styling accident.
+ * Chrome that world and the remotes render identically, so a remote looks
+ * the same whether it is mounted inside world or running standalone.
  */
 import { Component } from 'react';
 
@@ -8,13 +8,11 @@ import { Component } from 'react';
  * The dashed outline drawn around anything that came from a remote, labelled
  * with which React instance is rendering inside it.
  */
-export function RemoteBoundary({ app, version, instanceId, unit, children }) {
+export function RemoteBoundary({ app, version, instanceId, children }) {
   return (
     <section className="remote-boundary">
       <header className="remote-boundary-head">
-        <span>
-          {app} boundary / integration unit: {unit}
-        </span>
+        <span>{app} boundary / mount(el, props)</span>
         <span>
           React {version} / {instanceId}
         </span>
@@ -51,7 +49,7 @@ export class ErrorBoundary extends Component {
   }
 }
 
-/** Renders the given source with the marked fragments highlighted. */
+/** Renders the given source verbatim. */
 export function Code({ children }) {
   return <pre className="code">{children}</pre>;
 }

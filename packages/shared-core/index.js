@@ -1,16 +1,14 @@
 /**
  * @mfe/shared-core
  *
- * Framework agnostic primitives used by the Shell and by both remotes in both
- * options. Nothing in this file imports React, which is precisely what makes
- * Option 2's `mount(el, props)` contract possible: the Shell can hand this
- * store to a remote that is running a completely different React version, or
- * no React at all.
+ * Framework agnostic primitives used by world and by both remotes. Nothing in
+ * this file imports React, which is precisely what makes the `mount(el, props)`
+ * contract possible: world can hand this store to a remote that is running its
+ * own React copy, or no React at all.
  *
- * Option 1 marks this package as a federated singleton, so all three apps get
- * one instance. Option 2 does not share it, so each app bundles its own copy.
- * The probe below is deliberately pinned to `globalThis` so that it still sees
- * every app even when the module itself has been duplicated.
+ * Nothing is federated as shared, so each app bundles its own copy of this
+ * module. The bus and the probe below are deliberately pinned to `globalThis`
+ * so that every copy talks to the same objects.
  */
 
 /* -------------------------------------------------------------- store --- */
@@ -38,17 +36,16 @@ export function createStore(initialState) {
 }
 
 /**
- * The one piece of application state the Shell owns and both remotes touch.
+ * The one piece of application state world owns and both remotes touch.
  *
- * `selection` is deliberately boring: a list of items app1 adds and app2 reads.
- * Its only job is to be a value that visibly crosses an app boundary, so the
- * two options can be caught doing it differently.
+ * `selection` is deliberately boring: a list of items rick adds and morty
+ * reads. Its only job is to be a value that visibly crosses an app boundary.
+ * Routing is not in here; wouter owns the URL in every app.
  */
 export function createSessionStore() {
   const store = createStore({
     user: { name: 'Dana Okafor', role: 'Operations lead' },
     theme: 'dark',
-    route: '/overview',
     selection: [],
   });
 
@@ -58,11 +55,6 @@ export function createSessionStore() {
     setTheme(theme) {
       store.setState({ theme });
       bus.emit('session:theme', { theme });
-    },
-
-    navigate(route) {
-      store.setState({ route });
-      bus.emit('session:route', { route });
     },
 
     addToSelection(sku) {
@@ -122,16 +114,13 @@ export function createBus() {
 }
 
 /**
- * Global on purpose. In Option 2 every app carries its own copy of this
- * module, so a module scoped bus would give each app a private channel and
- * nothing would ever cross the boundary.
+ * Global on purpose. Every app carries its own copy of this module, so a
+ * module scoped bus would give each app a private channel and nothing would
+ * ever cross the boundary.
  */
 export const bus = (globalThis.__MFE_BUS__ ??= createBus());
 
 /* -------------------------------------------------------------- probe --- */
-
-/** Fresh object per module instance, so duplicates are countable. */
-export const CORE_MODULE_TOKEN = { module: '@mfe/shared-core' };
 
 const probe = (globalThis.__MFE_PROBE__ ??= {
   counters: {},
@@ -160,10 +149,10 @@ function invalidate() {
 /**
  * Called once per app as it boots.
  * `react` is the app's imported React namespace object. Two apps that pass the
- * same object are running on the same React instance, which is the whole
- * question Option 1 and Option 2 answer differently.
+ * same object are running on the same React instance. Here every app brings
+ * its own, so the probe counts one instance per loaded app.
  */
-export function registerApp({ app, label, role, react, sessionToken }) {
+export function registerApp({ app, label, role, react }) {
   // Identity is taken from `createElement` rather than the namespace object.
   // A bundler can hand each importing chunk its own namespace wrapper around
   // one shared module, but the functions inside it are the same references.
@@ -176,8 +165,6 @@ export function registerApp({ app, label, role, react, sessionToken }) {
     role,
     reactVersion: react?.version ?? 'unknown',
     reactId: idFor('react', reactIdentity),
-    coreId: idFor('core', CORE_MODULE_TOKEN),
-    sessionId: idFor('session', sessionToken),
   };
 
   probe.apps.set(app, record);
@@ -201,15 +188,14 @@ export function unregisterApp(app) {
   if (probe.apps.delete(app)) invalidate();
 }
 
-function group(apps, key) {
+/** One bucket per distinct React instance, listing the apps running on it. */
+function groupByReact(apps) {
   const buckets = new Map();
   for (const record of apps) {
-    const id = record[key];
+    const id = record.reactId;
     if (!id) continue;
-    if (!buckets.has(id)) buckets.set(id, { id, apps: [], version: null });
-    const bucket = buckets.get(id);
-    bucket.apps.push(record.app);
-    if (key === 'reactId') bucket.version = record.reactVersion;
+    if (!buckets.has(id)) buckets.set(id, { id, apps: [], version: record.reactVersion });
+    buckets.get(id).apps.push(record.app);
   }
   return [...buckets.values()];
 }
@@ -217,12 +203,7 @@ function group(apps, key) {
 export function getProbeSnapshot() {
   if (!probe.snapshot) {
     const apps = [...probe.apps.values()];
-    probe.snapshot = {
-      apps,
-      reactInstances: group(apps, 'reactId'),
-      coreInstances: group(apps, 'coreId'),
-      sessionInstances: group(apps, 'sessionId'),
-    };
+    probe.snapshot = { apps, reactInstances: groupByReact(apps) };
   }
   return probe.snapshot;
 }
@@ -271,12 +252,12 @@ export function measureScripts() {
 
 /** Placeholder rows. Nothing here is priced, sold, or sent anywhere. */
 export const CATALOG = [
-  { sku: 'AX-1042', name: 'Axial fan module', category: 'Cooling' },
-  { sku: 'BR-2210', name: 'Brushless servo', category: 'Motion' },
-  { sku: 'CP-0031', name: 'Capacitor bank', category: 'Power' },
-  { sku: 'DR-7788', name: 'Driver board rev C', category: 'Control' },
-  { sku: 'EN-3390', name: 'Optical encoder', category: 'Motion' },
-  { sku: 'FL-0912', name: 'Inline filter', category: 'Fluid' },
+  { sku: 'PG-0001', name: 'Portal gun fluid', category: 'Portal' },
+  { sku: 'MS-0042', name: 'Microverse battery', category: 'Power' },
+  { sku: 'MK-0137', name: 'Meeseeks box', category: 'Labour' },
+  { sku: 'PL-0210', name: 'Plumbus', category: 'Household' },
+  { sku: 'BF-0666', name: 'Butter passing robot', category: 'Robotics' },
+  { sku: 'SZ-0099', name: 'Szechuan sauce', category: 'Condiments' },
 ];
 
 export function findPart(sku) {

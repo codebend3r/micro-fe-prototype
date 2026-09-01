@@ -1,6 +1,8 @@
 /**
- * The instrumentation panel. Deliberately shared by both Shells so that the
- * two options are measured by identical code and the numbers are comparable.
+ * The instrumentation panel world shows beside the remotes: which apps have
+ * loaded so far, how many React copies that cost, and how much JavaScript
+ * came over the wire. Watching it fill in as you click Rick and Morty is the
+ * lazy loading, made visible.
  */
 import { formatBytes } from '@mfe/shared-core';
 
@@ -15,28 +17,9 @@ function Stat({ value, label, tone }) {
   );
 }
 
-function InstanceList({ instances, empty }) {
-  if (!instances.length) return <p className="small muted">{empty}</p>;
-  return (
-    <ul className="instance-list">
-      {instances.map((instance) => (
-        <li className="instance-row" key={instance.id}>
-          <span className="mono">{instance.id}</span>
-          <span className="small muted">
-            {instance.version ? `v${instance.version} ` : ''}
-            {instance.apps.join(', ')}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export function ProbePanel({ option, snapshot, scripts, prod, events }) {
+export function ProbePanel({ snapshot, scripts, prod, events, location }) {
   const reactCount = snapshot.reactInstances.length;
-  const versions = [
-    ...new Set(snapshot.reactInstances.map((instance) => instance.version)),
-  ];
+  const versions = [...new Set(snapshot.reactInstances.map((instance) => instance.version))];
 
   return (
     <aside className="probe">
@@ -52,15 +35,16 @@ export function ProbePanel({ option, snapshot, scripts, prod, events }) {
       </div>
 
       <div className="probe-stats">
-        <Stat
-          value={reactCount}
-          label="React copies"
-          tone={option === 1 ? 'ok' : 'accent'}
-        />
+        <Stat value={reactCount} label="React copies" tone="accent" />
         <Stat value={versions.join(' + ') || '?'} label="React versions" />
         <Stat value={formatBytes(scripts.bytes)} label="JS transferred" />
         <Stat value={scripts.chunks} label="JS chunks" />
       </div>
+
+      <dl className="kv">
+        <dt>Browser URL</dt>
+        <dd>{location}</dd>
+      </dl>
 
       <div className="stack" style={{ gap: '8px' }}>
         <span className="eyebrow">Apps on this page</span>
@@ -69,7 +53,7 @@ export function ProbePanel({ option, snapshot, scripts, prod, events }) {
             <tr>
               <th>App</th>
               <th className="mono">React</th>
-              <th>Shell session</th>
+              <th>Sees</th>
             </tr>
           </thead>
           <tbody>
@@ -85,19 +69,15 @@ export function ProbePanel({ option, snapshot, scripts, prod, events }) {
                   <br />
                   <span className="muted">{app.reactId}</span>
                 </td>
-                <td>
+                <td className="mono small">
                   {app.role === 'shell' ? (
                     <span className="pill pill-accent">owner</span>
-                  ) : app.contextConnected ? (
-                    <span className="pill pill-ok">
-                      <span className="dot" />
-                      context
-                    </span>
                   ) : (
-                    <span className="pill pill-warn">
-                      <span className="dot" />
-                      {app.channel ?? 'no context'}
-                    </span>
+                    <>
+                      {app.location ?? '/'}
+                      <br />
+                      <span className="muted">theme {app.themeSeen ?? '?'}</span>
+                    </>
                   )}
                 </td>
               </tr>
@@ -106,51 +86,32 @@ export function ProbePanel({ option, snapshot, scripts, prod, events }) {
         </table>
       </div>
 
-      <div className="stack" style={{ gap: '8px' }}>
-        <span className="eyebrow">React instances</span>
-        <InstanceList instances={snapshot.reactInstances} empty="none yet" />
-      </div>
+      {scripts.byOrigin.length > 0 ? (
+        <div className="stack" style={{ gap: '8px' }}>
+          <span className="eyebrow">JavaScript by origin</span>
+          <table className="table">
+            <tbody>
+              {scripts.byOrigin.map((row) => (
+                <tr key={row.origin}>
+                  <td className="mono">{row.origin}</td>
+                  <td className="num mono">{row.chunks}</td>
+                  <td className="num mono">{formatBytes(row.bytes)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       <div className="stack" style={{ gap: '8px' }}>
-        <span className="eyebrow">@mfe/session copies</span>
-        <InstanceList
-          instances={snapshot.sessionInstances}
-          empty="no app has loaded it yet"
-        />
-      </div>
-
-      <div className="stack" style={{ gap: '8px' }}>
-        <span className="eyebrow">@mfe/shared-core copies</span>
-        <InstanceList
-          instances={snapshot.coreInstances}
-          empty="no app has loaded it yet"
-        />
-      </div>
-
-      <div className="stack" style={{ gap: '8px' }}>
-        <span className="eyebrow">JavaScript by origin</span>
-        <table className="table">
-          <tbody>
-            {scripts.byOrigin.map((origin) => (
-              <tr key={origin.origin}>
-                <td className="mono">{origin.origin.replace('http://', '')}</td>
-                <td className="num mono muted">{origin.chunks}</td>
-                <td className="num mono">{formatBytes(origin.bytes)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="stack" style={{ gap: '8px' }}>
-        <span className="eyebrow">Cross app event bus</span>
+        <span className="eyebrow">Shared bus, latest first</span>
         {events.length === 0 ? (
-          <p className="small muted">nothing emitted yet</p>
+          <p className="small muted">Nothing emitted yet.</p>
         ) : (
           <ul className="event-log">
             {events.map((event) => (
               <li key={event.seq}>
-                <span>{String(event.seq).padStart(2, '0')}</span>
+                <span>#{event.seq}</span>
                 <span>{event.type}</span>
               </li>
             ))}

@@ -6,7 +6,6 @@ export interface SessionValue {
   store: SessionStore;
 }
 
-export const SESSION_MODULE_TOKEN: object;
 export const SessionContext: import('react').Context<SessionValue | null>;
 
 export function useStoreState<T>(store: Store<T>): T;

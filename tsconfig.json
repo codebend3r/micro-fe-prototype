@@ -19,8 +19,8 @@
     "packages/*/*.js",
     "packages/*/*.jsx",
     "packages/*/*.d.ts",
-    "compare/src",
-    "option1-shared/*/src",
-    "option2-independent/*/src"
+    "world/src",
+    "rick/src",
+    "morty/src"
   ]
 }

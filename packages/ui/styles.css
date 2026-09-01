@@ -4,9 +4,9 @@
  * Layout rules for this repo: grid only (never flex), and space things with
  * `gap` plus container padding rather than margins.
  *
- * Note that CSS custom properties cascade from the Shell's <html> element into
- * a remote's DOM in BOTH options, even in Option 2 where React context does
- * not cross. Styling and theming travel through the DOM; React state does not.
+ * Note that CSS custom properties cascade from world's <html> element into a
+ * remote's DOM even though React context does not. Styling and theming travel
+ * through the DOM; React state does not.
  */
 
 :root {
@@ -58,20 +58,6 @@
   --ok: #15803d;
   --warn: #b45309;
   --danger: #be123c;
-}
-
-/* Option 2 gets its own accent so the two stacks stay distinguishable at a
-   glance when they are sitting next to each other in the comparison view. */
-[data-option='2'] {
-  --accent: #fbbf24;
-  --accent-ink: #1a1204;
-  --accent-soft: rgba(251, 191, 36, 0.14);
-}
-
-[data-option='2'][data-theme='light'] {
-  --accent: #b45309;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(180, 83, 9, 0.1);
 }
 
 * {
@@ -182,7 +168,9 @@ pre,
 }
 
 .nav-link {
+  display: block;
   padding: 6px 12px;
+  text-decoration: none;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: none;
@@ -350,7 +338,6 @@ pre,
 
 .pill-ok { color: var(--ok); }
 .pill-warn { color: var(--warn); }
-.pill-danger { color: var(--danger); }
 .pill-accent { color: var(--accent); }
 
 .dot {
@@ -474,26 +461,6 @@ pre.code b {
   color: var(--text-faint);
 }
 
-.instance-list {
-  display: grid;
-  gap: 6px;
-  list-style: none;
-  padding: 0;
-}
-
-.instance-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  font-size: 12px;
-}
-
-.instance-row .mono { color: var(--accent); }
 
 .event-log {
   display: grid;
@@ -677,10 +644,3 @@ pre.code b {
   gap: 8px;
 }
 
-.row-end {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: end;
-  align-items: center;
-  gap: 8px;
-}

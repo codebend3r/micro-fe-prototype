@@ -2,15 +2,14 @@
 /**
  * Preflight and cleanup for the prototype's fixed ports.
  *
- * Every app pins its port with `strictPort: true`, because the Shells resolve
- * their remotes by absolute URL. That is the right behaviour, but it means a
- * single stale process turns `bun run start` into seven confusing SIGTERM
- * failures at once. This script turns that into one clear sentence.
+ * Every app pins its port with `strictPort: true`, because world resolves its
+ * remotes by absolute URL. That is the right behaviour, but it means a single
+ * stale process turns `bun run start` into three confusing SIGTERM failures at
+ * once. This script turns that into one clear sentence.
  *
- *   bun scripts/ports.mjs check all          verify the ports are free
- *   bun scripts/ports.mjs check option1      verify one stack's ports
- *   bun scripts/ports.mjs check option1 --built   also verify dist/ exists
- *   bun scripts/ports.mjs free all           kill this repo's dev servers
+ *   bun scripts/ports.mjs check              verify the ports are free
+ *   bun scripts/ports.mjs check --built      also verify each dist/ exists
+ *   bun scripts/ports.mjs free               kill this repo's dev servers
  */
 import net from 'node:net';
 import path from 'node:path';
@@ -28,32 +27,15 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  */
 const OURS = /^(node|bun)$/i;
 
-const GROUPS = {
-  compare: [{ port: 5100, label: 'comparison harness', dir: 'compare', served: 'dev' }],
-  option1: [
-    { port: 5010, label: 'Option 1 shell', dir: 'option1-shared/shell', served: 'build' },
-    { port: 5011, label: 'Option 1 app1', dir: 'option1-shared/app1', served: 'build' },
-    { port: 5012, label: 'Option 1 app2', dir: 'option1-shared/app2', served: 'build' },
-  ],
-  option2: [
-    { port: 5020, label: 'Option 2 shell', dir: 'option2-independent/shell', served: 'build' },
-    { port: 5021, label: 'Option 2 app1', dir: 'option2-independent/app1', served: 'build' },
-    { port: 5022, label: 'Option 2 app2', dir: 'option2-independent/app2', served: 'build' },
-  ],
-};
+const APPS = [
+  { port: 5100, label: 'world (shell)', dir: 'world' },
+  { port: 5101, label: 'rick', dir: 'rick' },
+  { port: 5102, label: 'morty', dir: 'morty' },
+];
 
 const [mode, ...rest] = process.argv.slice(2);
 const flags = new Set(rest.filter((arg) => arg.startsWith('--')));
-const names = rest.filter((arg) => !arg.startsWith('--'));
-const selected = names.includes('all') || names.length === 0 ? Object.keys(GROUPS) : names;
-
-const targets = selected.flatMap((name) => {
-  if (!GROUPS[name]) {
-    console.error(`Unknown group "${name}". Use one of: ${Object.keys(GROUPS).join(', ')}, all`);
-    process.exit(2);
-  }
-  return GROUPS[name];
-});
+const targets = APPS;
 
 /** True only if nothing is listening on either loopback stack. */
 function isFree(port) {
@@ -102,7 +84,7 @@ async function check() {
     if (!(await isFree(target.port))) {
       busy.push({ ...target, holders: listenersOn(target.port) });
     }
-    if (flags.has('--built') && target.served === 'build') {
+    if (flags.has('--built')) {
       const built = path.join(ROOT, target.dir, 'dist', 'index.html');
       if (!existsSync(built)) {
         console.error(
@@ -165,6 +147,6 @@ function free() {
 if (mode === 'check') await check();
 else if (mode === 'free') free();
 else {
-  console.error('Usage: bun scripts/ports.mjs <check|free> [compare|option1|option2|all] [--built]');
+  console.error('Usage: bun scripts/ports.mjs <check|free> [--built]');
   process.exit(2);
 }

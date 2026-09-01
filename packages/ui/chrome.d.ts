@@ -4,7 +4,6 @@ export function RemoteBoundary(props: {
   app: string;
   version: string;
   instanceId: string;
-  unit: string;
   children?: ReactNode;
 }): ReactElement;
 
