@@ -50,22 +50,44 @@ export function useThemeAttribute(theme, option) {
   }, [theme, option]);
 }
 
-/** Two way sync between the session store's route and the URL hash. */
+/**
+ * Two way sync between the session store's route and the URL hash.
+ *
+ * Store to URL: every in app navigation pushes a history entry, so the back
+ * and forward buttons walk the routes the user actually visited. The one
+ * exception is a Shell embedded in the comparison harness. It shares the tab's
+ * history with the other Shell, and two pushes per click would put the pair
+ * out of step the first time someone hits back, so embedded Shells replace.
+ *
+ * URL to store: the initial hash, a hand edited hash, and back or forward all
+ * arrive as `hashchange`. Those already have their own entry, so the store
+ * update they trigger must not push another one.
+ */
 export function useHashRoute(store) {
   useEffect(() => {
+    const embedded = window.parent !== window;
+    let applyingUrl = false;
+
     const fromHash = () => {
       const path = decodeURIComponent(window.location.hash.slice(1)) || '/overview';
-      if (path !== store.getState().route) store.navigate(path);
+      if (path === store.getState().route) return;
+      applyingUrl = true;
+      try {
+        store.navigate(path);
+      } finally {
+        applyingUrl = false;
+      }
     };
 
     fromHash();
     window.addEventListener('hashchange', fromHash);
 
     const unsubscribe = store.subscribe((state) => {
+      if (applyingUrl) return;
       const target = `#${state.route}`;
-      if (window.location.hash !== target) {
-        window.history.replaceState(null, '', target);
-      }
+      if (window.location.hash === target) return;
+      if (embedded) window.history.replaceState(null, '', target);
+      else window.history.pushState(null, '', target);
     });
 
     return () => {
