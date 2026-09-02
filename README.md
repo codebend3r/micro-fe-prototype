@@ -78,33 +78,43 @@ That builds all three apps and serves them: world on 5100, rick on 5101, morty o
 fetches `http://localhost:5101/remoteEntry.js` at boot to learn what rick offers, and rick's actual
 code the first time you click Rick. Same for morty.
 
-If you would rather see the three processes separately, this is the same thing in three terminals:
+### One app per terminal
+
+Every app is built, served and reached on its own, so there is one script per app. Each one builds
+that app and serves the build on its own port, nothing else:
 
 ```bash
-bun run --filter @app/rick build && bun run --filter @app/rick preview     # :5101
-bun run --filter @app/morty build && bun run --filter @app/morty preview   # :5102
-bun run --filter @app/world build && bun run --filter @app/world preview   # :5100
+bun run start:shell    # world  on :5100   (`start:world` is the same thing)
+bun run start:rick     # rick   on :5101
+bun run start:morty    # morty  on :5102
+bun run start:jerry    # jerry  on :5103, from the guest repo next door
 ```
 
 Order does not matter. World only reaches for a remote's code when you navigate to it, so you can
 start a remote after world is already up. If a remote is down when you navigate to it, world shows
-a failure inside that remote's slot and the rest of the page keeps working.
+a failure inside that remote's slot and the rest of the page keeps working. Starting world prints
+which remotes are answering right now, so an empty slot never looks like a bug.
+
+Each script checks its own port first and stops with one sentence if it is taken, rather than
+letting `strictPort` fail three servers at once. `bun run stop rick` frees a single port the same
+way; `bun run stop` frees all three.
 
 ### Running a remote by itself
 
 Every remote is a real standalone app, which is the whole point of independent deployment. Each one
 boots its own session store and drives its own `mount(el, props)` contract exactly the way world
-does:
+does. Run one with no shell in sight, on a Vite dev server with HMR:
 
 ```bash
-bun run --filter @app/rick dev     # http://localhost:5101
-bun run --filter @app/morty dev    # http://localhost:5102
+bun run dev:rick     # http://localhost:5101
+bun run dev:morty    # http://localhost:5102
 ```
 
 ### Dev mode with hot reload
 
 ```bash
-bun run dev
+bun run dev          # all three at once
+bun run dev:shell    # or one at a time: dev:shell, dev:rick, dev:morty, dev:jerry
 ```
 
 Dev mode serves `remoteEntry.js` straight off each remote's Vite dev server, so there is no build
@@ -121,18 +131,25 @@ bun run stop
 ```
 
 That frees only this prototype's three ports, and only if a `node` or `bun` process is holding
-them. It will not touch anything else listening nearby.
+them. It will not touch anything else listening nearby. Name an app to free one port instead of
+three: `bun run stop morty`. Jerry belongs to another repo, so it is only ever touched when named
+outright: `bun run stop jerry`.
 
 ### Every script
 
 | Command | What it does |
 | --- | --- |
 | `bun run start` | Build all three apps and serve them |
+| `bun run start:shell` | Build world alone and serve it on 5100 (`start:world` too) |
+| `bun run start:rick` | Build rick alone and serve it on 5101 |
+| `bun run start:morty` | Build morty alone and serve it on 5102 |
+| `bun run start:jerry` | Build the guest repo's jerry and serve it on 5103 |
 | `bun run dev` | All three on Vite dev servers with HMR |
+| `bun run dev:shell` | World alone with HMR (`dev:rick`, `dev:morty`, `dev:jerry` too) |
 | `bun run build` | Build all three |
 | `bun run build:netlify` | Build all three for one origin and assemble `dist/` |
 | `bun run serve` | Serve the existing build without rebuilding |
-| `bun run stop` | Free the prototype's ports |
+| `bun run stop` | Free the prototype's ports, or one named app's port |
 | `bun run typecheck` | `tsc --noEmit` across the workspace |
 | `bun run clean` | Remove all `dist` folders |
 
@@ -174,9 +191,13 @@ To see it, run jerry's dev server alongside this one. With the two repos checked
 side:
 
 ```bash
-bun run dev:guest      # jerry on :5103, from ../micro-fe-prototype--guest
+bun run dev:jerry      # jerry on :5103, from ../micro-fe-prototype--guest
 bun run dev            # world, rick and morty, in another terminal
 ```
+
+`start:jerry` and `dev:jerry` run the guest repo's own scripts and nothing else. If that repo is
+not checked out next door, they say so and print the `git clone` line rather than fail on a
+missing path.
 
 Then open http://localhost:5100/jerry. If jerry's server is not running, its slot reports the
 load failure and everything else on the page keeps working. That is the same failure path a

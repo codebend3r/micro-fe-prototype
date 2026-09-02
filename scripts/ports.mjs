@@ -9,7 +9,11 @@
  *
  *   bun scripts/ports.mjs check              verify the ports are free
  *   bun scripts/ports.mjs check --built      also verify each dist/ exists
+ *   bun scripts/ports.mjs check morty        one app instead of all of them
  *   bun scripts/ports.mjs free               kill this repo's dev servers
+ *
+ * `scripts/start-app.mjs` imports the checks from here rather than shelling
+ * out, so one app and all of them get the same preflight and the same wording.
  */
 import net from 'node:net';
 import path from 'node:path';
@@ -27,18 +31,38 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  */
 const OURS = /^(node|bun)$/i;
 
-const APPS = [
-  { port: 5100, label: 'world (shell)', dir: 'world' },
-  { port: 5101, label: 'rick', dir: 'rick' },
-  { port: 5102, label: 'morty', dir: 'morty' },
+export const APPS = [
+  { port: 5100, label: 'world (shell)', dir: 'world', names: ['world', 'shell'] },
+  { port: 5101, label: 'rick', dir: 'rick', names: ['rick'] },
+  { port: 5102, label: 'morty', dir: 'morty', names: ['morty'] },
+  // Jerry is a guest from another repository, so it is opt in: named on the
+  // command line or not touched at all. Bare `check` and `free` stay about the
+  // three ports this repo actually builds and serves.
+  {
+    port: 5103,
+    label: 'jerry (guest)',
+    dir: '../micro-fe-prototype--guest',
+    names: ['jerry', 'guest'],
+    guest: true,
+  },
 ];
 
-const [mode, ...rest] = process.argv.slice(2);
-const flags = new Set(rest.filter((arg) => arg.startsWith('--')));
-const targets = APPS;
+/** The three apps this repo owns. What the whole-system scripts operate on. */
+export const OURS_TO_RUN = APPS.filter((app) => !app.guest);
+
+/** Turn names like `morty` or `shell` into app entries. Exits if one is wrong. */
+export function appsNamed(names) {
+  return names.map((name) => {
+    const app = APPS.find((entry) => entry.names.includes(name.toLowerCase()));
+    if (app) return app;
+    const known = APPS.flatMap((entry) => entry.names).join(', ');
+    console.error(`\n  Unknown app: ${name}\n\n  Try one of: ${known}\n`);
+    process.exit(2);
+  });
+}
 
 /** True only if nothing is listening on either loopback stack. */
-function isFree(port) {
+export function isFree(port) {
   return Promise.all(['127.0.0.1', '::1'].map((host) => canBind(port, host))).then((results) =>
     results.every(Boolean),
   );
@@ -57,7 +81,7 @@ function canBind(port, host) {
   });
 }
 
-function listenersOn(port) {
+export function listenersOn(port) {
   let output = '';
   try {
     output = execFileSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], {
@@ -77,14 +101,14 @@ function listenersOn(port) {
   return found;
 }
 
-async function check() {
+export async function check(targets, { built = false } = {}) {
   const busy = [];
 
   for (const target of targets) {
     if (!(await isFree(target.port))) {
       busy.push({ ...target, holders: listenersOn(target.port) });
     }
-    if (flags.has('--built')) {
+    if (built) {
       const built = path.join(ROOT, target.dir, 'dist', 'index.html');
       if (!existsSync(built)) {
         console.error(
@@ -111,8 +135,10 @@ async function check() {
 
   console.error('');
   if (ours) {
+    // `bun run stop` only frees this repo's three. Jerry has to be named.
+    const stop = busy.every((entry) => entry.guest) ? 'bun run stop jerry' : 'bun run stop';
     console.error('  A previous run is still going. Free the ports with:\n');
-    console.error('      bun run stop\n');
+    console.error(`      ${stop}\n`);
   }
   if (foreign) {
     console.error('  Something outside this repo holds a port. On macOS, System Settings >');
@@ -121,7 +147,7 @@ async function check() {
   process.exit(1);
 }
 
-function free() {
+export function free(targets) {
   let killed = 0;
 
   for (const target of targets) {
@@ -144,9 +170,16 @@ function free() {
   console.log(killed ? `\n  Stopped ${killed} process(es).\n` : '\n  Nothing to stop.\n');
 }
 
-if (mode === 'check') await check();
-else if (mode === 'free') free();
-else {
-  console.error('Usage: bun scripts/ports.mjs <check|free> [--built]');
-  process.exit(2);
+if (import.meta.main) {
+  const [mode, ...rest] = process.argv.slice(2);
+  const flags = new Set(rest.filter((arg) => arg.startsWith('--')));
+  const named = rest.filter((arg) => !arg.startsWith('--'));
+  const targets = named.length ? appsNamed(named) : OURS_TO_RUN;
+
+  if (mode === 'check') await check(targets, { built: flags.has('--built') });
+  else if (mode === 'free') free(targets);
+  else {
+    console.error('Usage: bun scripts/ports.mjs <check|free> [app...] [--built]');
+    process.exit(2);
+  }
 }
