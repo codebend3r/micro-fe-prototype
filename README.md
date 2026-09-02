@@ -26,6 +26,7 @@ list exists only to be a value that visibly crosses an app boundary.
 | `world` | shell: routing, layout, session | `/`, `/rick/*`, `/morty/*` | 5100 |
 | `rick` | remote, writes the shared state | `/`, `/lab` | 5101 |
 | `morty` | remote, reads the shared state | `/`, `/school`, `/inventory` | 5102 |
+| `jerry` | guest remote, lives in [another repo](https://github.com/codebend3r/micro-fe-prototype--guest) | `/`, `/golf`, `/jerryboree`, `/complaints` | 5103 |
 
 A remote's routes are relative. Mounted inside world, rick's `/lab` is `/rick/lab` in the browser.
 Running standalone on its own port, it is just `/lab`.
@@ -160,6 +161,38 @@ deliberately avoid 5000, which macOS AirPlay Receiver occupies by default.
    root. World and morty never find out. That containment is what the mount contract buys.
 7. **Switch the theme.** It reaches into both remotes, because CSS custom properties cascade
    through the DOM regardless of React boundaries. Styling crosses. React state does not.
+
+## A guest remote from another repo
+
+**jerry** is the proof that world does not care where a remote comes from. It is built, served
+and versioned in [micro-fe-prototype--guest](https://github.com/codebend3r/micro-fe-prototype--guest),
+carries its own React 19, wouter and zustand, and imports nothing from this repository. World
+knows three things about it: a URL to its `remoteEntry.js`, the `/jerry` prefix, and that it
+takes the same props bag as rick and morty.
+
+To see it, run jerry's dev server alongside this one. With the two repos checked out side by
+side:
+
+```bash
+bun run dev:guest      # jerry on :5103, from ../micro-fe-prototype--guest
+bun run dev            # world, rick and morty, in another terminal
+```
+
+Then open http://localhost:5100/jerry. If jerry's server is not running, its slot reports the
+load failure and everything else on the page keeps working. That is the same failure path a
+down rick or morty takes.
+
+`scripts/deploy-target.ts` points at `http://localhost:5103/` unless `JERRY_ORIGIN` is set at
+build time, so a deployed world reaches a deployed jerry through one environment variable and
+no code change. Jerry is not part of `bun run build`, `bun run start`, or the Netlify layout,
+because it is not this repo's to build. The deployed copy will show jerry's slot failing to load
+until `JERRY_ORIGIN` is set in Netlify's environment and jerry is hosted somewhere that sends
+CORS headers.
+
+Two things jerry deliberately does without. It does not register with the probe panel's app
+table, because that would mean reaching into a `globalThis` internal of this repo. And it
+brings its own stylesheet, prefixed and injected by its `mount`, reading world's CSS custom
+properties with fallbacks, so the theme toggle reaches it like everyone else.
 
 ## How routing works
 

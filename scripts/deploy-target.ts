@@ -19,7 +19,22 @@
 // lib, so declare the one thing read here rather than pull in @types/node.
 declare const process: { env: Record<string, string | undefined> };
 
-export type AppKey = 'world' | 'rick' | 'morty';
+export type AppKey = 'world' | 'rick' | 'morty' | 'jerry';
+
+/**
+ * Jerry is a guest: a remote built and served from a different repository,
+ * github.com/codebend3r/micro-fe-prototype--guest. This repo never builds it
+ * and never lays out its output; it only needs to know where it is. Locally
+ * that is the next port after morty's. Anywhere else, `JERRY_ORIGIN` names the
+ * origin jerry's build is hosted on, trailing slash included.
+ */
+const JERRY_LOCAL = 'http://localhost:5103/';
+const jerryOrigin = process.env.JERRY_ORIGIN ?? JERRY_LOCAL;
+const jerry: AppAddress = {
+  base: jerryOrigin,
+  url: jerryOrigin,
+  label: jerryOrigin.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+};
 
 /**
  * Three ports. World is served at the root of its own port, so its `base` is
@@ -38,6 +53,7 @@ const LOCAL: Record<AppKey, AppAddress> = {
     url: 'http://localhost:5102/',
     label: 'localhost:5102',
   },
+  jerry,
 };
 
 /**
@@ -50,6 +66,9 @@ const DEPLOYED: Record<AppKey, AppAddress> = {
   world: { base: '/', url: '/', label: '/' },
   rick: { base: '/apps/rick/', url: '/apps/rick/', label: '/apps/rick' },
   morty: { base: '/apps/morty/', url: '/apps/morty/', label: '/apps/morty' },
+  // Not on this origin. Without JERRY_ORIGIN the deployed world still points at
+  // localhost, and its jerry slot reports a load failure rather than a crash.
+  jerry,
 };
 
 export const target = process.env.MFE_TARGET === 'netlify' ? 'netlify' : 'local';

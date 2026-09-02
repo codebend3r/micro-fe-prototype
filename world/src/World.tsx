@@ -18,6 +18,7 @@ import { Home } from './Home';
 // import is a federated module that is only fetched when the loader runs.
 const loadRick = () => import('rick/mount');
 const loadMorty = () => import('morty/mount');
+const loadJerry = () => import('jerry/mount');
 
 /**
  * Everything a remote gets, handed over once at mount time. It has to be
@@ -28,11 +29,13 @@ const loadMorty = () => import('morty/mount');
 const shared = { store, bus };
 const rickProps = { ...shared, base: '/rick' };
 const mortyProps = { ...shared, base: '/morty' };
+const jerryProps = { ...shared, base: '/jerry' };
 
 const NAV = [
   { href: '/', label: 'Home' },
   { href: '/rick', label: 'Rick' },
   { href: '/morty', label: 'Morty' },
+  { href: '/jerry', label: 'Jerry' },
 ];
 
 export function World() {
@@ -121,6 +124,17 @@ function WorldChrome() {
               </RemoteSlot>
             </Route>
 
+            {/*
+              Jerry is built, served and versioned in another repository. World
+              treats it exactly like the two remotes it grew up with: a URL to
+              a remoteEntry.js, a prefix, and the same props bag.
+            */}
+            <Route path="/jerry" nest>
+              <RemoteSlot title="Jerry" remote="jerry" address={__REMOTE_JERRY__} routes={4} guest>
+                <RemoteMount name="jerry" loader={loadJerry} props={jerryProps} />
+              </RemoteSlot>
+            </Route>
+
             <Route>
               <section className="panel">
                 <div className="panel-title">
@@ -128,7 +142,7 @@ function WorldChrome() {
                   <h1>Nothing lives at {location}</h1>
                 </div>
                 <p className="muted">
-                  World only knows three prefixes. <Link href="/">Back to the start.</Link>
+                  World only knows four prefixes. <Link href="/">Back to the start.</Link>
                 </p>
               </section>
             </Route>
@@ -152,12 +166,15 @@ function RemoteSlot({
   remote,
   address,
   routes,
+  guest = false,
   children,
 }: {
   title: string;
   remote: string;
   address: AppAddress;
   routes: number;
+  /** True for a remote that lives in a different repository. */
+  guest?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -165,7 +182,8 @@ function RemoteSlot({
       <div className="panel-head">
         <div className="panel-title">
           <span className="eyebrow">
-            remote {remote}, {routes} routes of its own
+            {guest ? 'guest ' : ''}remote {remote}, {routes} routes of its own
+            {guest ? ', from another repo' : ''}
           </span>
           <h1>{title}</h1>
         </div>

@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "A micro frontend: the world shell lazy loads the rick and morty remotes over module federation, every app on its own React 19 and wouter",
+  "description": "A micro frontend: the world shell lazy loads the rick and morty remotes over module federation, plus jerry, a guest remote from another repo, every app on its own React 19 and wouter",
   "workspaces": [
     "packages/*",
     "world",
@@ -13,6 +13,7 @@
   "scripts": {
     "start": "bun scripts/ports.mjs check && bun run build && bun run serve",
     "dev": "bun scripts/ports.mjs check && concurrently -k -n world,rick,morty -c blue,green,yellow \"bun run --cwd world dev\" \"bun run --cwd rick dev\" \"bun run --cwd morty dev\"",
+    "dev:guest": "bun run --cwd ../micro-fe-prototype--guest dev",
     "build": "bun run --filter \"@app/*\" build",
     "build:netlify": "export MFE_TARGET=netlify && bun run build && bun scripts/assemble-dist.mjs",
     "serve": "bun scripts/ports.mjs check --built && concurrently -k -n world,rick,morty -c blue,green,yellow \"bun run --cwd world preview\" \"bun run --cwd rick preview\" \"bun run --cwd morty preview\"",

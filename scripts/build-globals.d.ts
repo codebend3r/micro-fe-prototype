@@ -16,6 +16,7 @@ declare type AppAddress = {
   label: string;
 };
 
-/** The two remotes. Injected by world's vite config. */
+/** The remotes. Injected by world's vite config. */
 declare const __REMOTE_RICK__: AppAddress;
 declare const __REMOTE_MORTY__: AppAddress;
+declare const __REMOTE_JERRY__: AppAddress;

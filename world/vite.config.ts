@@ -19,6 +19,8 @@ export default defineConfig({
       remotes: {
         rick: { type: 'module', name: 'rick', entry: remoteEntry('rick') },
         morty: { type: 'module', name: 'morty', entry: remoteEntry('morty') },
+        // A guest from another repository. Same contract, different origin.
+        jerry: { type: 'module', name: 'jerry', entry: remoteEntry('jerry') },
       },
       // Nothing is shared. Every app carries its own React 19 and its own
       // wouter, so the boundary cannot be a React component and has to be a
@@ -31,6 +33,7 @@ export default defineConfig({
   define: {
     __REMOTE_RICK__: JSON.stringify(at.rick),
     __REMOTE_MORTY__: JSON.stringify(at.morty),
+    __REMOTE_JERRY__: JSON.stringify(at.jerry),
   },
   resolve: { dedupe: ['react', 'react-dom', 'wouter'] },
   customLogger: quietLogger(),
