@@ -7,6 +7,9 @@
 #   /apps/rick/     rick, serves remoteEntry.js
 #   /apps/morty/    morty, serves remoteEntry.js
 #
+# jerry is the exception: a guest remote from another repo, on its own site.
+# Nothing here builds or serves it; JERRY_ORIGIN below is the only link.
+#
 # World routes on the path, so anything that is not a real file falls back to
 # its index.html. Netlify serves static files before consulting redirects, so
 # the remotes' chunks are unaffected. Each remote's standalone page routes on
@@ -21,6 +24,12 @@
   # that executes Vite, because its binary carries a Node shebang.
   BUN_VERSION = "1.3.14"
   NODE_VERSION = "22"
+  # jerry is not on this origin and is not built here. It ships from its own
+  # repo to its own site, and this is the origin world resolves its
+  # remoteEntry.js from. Without it the deployed world falls back to jerry's
+  # local dev port and the /jerry route reports a load failure. Trailing slash
+  # is required; it has to match JERRY_ORIGIN in the guest repo's netlify.toml.
+  JERRY_ORIGIN = "https://jerry-remote.netlify.app/"
 
 [[redirects]]
   from = "/apps/rick/*"
